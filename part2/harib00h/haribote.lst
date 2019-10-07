@@ -1,0 +1,30 @@
+     1 00000000                                 ; haribote-os
+     2 00000000                                 ; TAB=4
+     3 00000000                                 
+     4 00000000                                 ; BOOT_INFO関係
+     5  = 00000FF0                              CYLS	EQU		0x0ff0			; ブートセクタが設定する
+     6  = 00000FF1                              LEDS	EQU		0x0ff1
+     7  = 00000FF2                              VMODE	EQU		0x0ff2			; 色数に関する情報。何ビットカラーか？
+     8  = 00000FF4                              SCRNX	EQU		0x0ff4			; 解像度のX
+     9  = 00000FF6                              SCRNY	EQU		0x0ff6			; 解像度のY
+    10  = 00000FF8                              VRAM	EQU		0x0ff8			; グラフィックバッファの開始番地
+    11 00000000                                 
+    12                                          		ORG		0xc200			; このプログラムがどこに読み込まれるのか
+    13 0000C200                                 
+    14 0000C200 B0 13                           		MOV		AL,0x13			; VGAグラフィックス、320x200x8bitカラー
+    15 0000C202 B4 00                           		MOV		AH,0x00
+    16 0000C204 CD 10                           		INT		0x10
+    17 0000C206 C6 06 0FF2 08                   		MOV		BYTE [VMODE],8	; 画面モードをメモする
+    18 0000C20B C7 06 0FF4 0140                 		MOV		WORD [SCRNX],320
+    19 0000C211 C7 06 0FF6 00C8                 		MOV		WORD [SCRNY],200
+    20 0000C217 66 C7 06 0FF8 000A0000          		MOV		DWORD [VRAM],0x000a0000
+    21 0000C220                                 
+    22 0000C220                                 ; キーボードのLED状態をBIOSに教えてもらう
+    23 0000C220                                 
+    24 0000C220 B4 02                           		MOV		AH,0x02
+    25 0000C222 CD 16                           		INT		0x16 			; keyboard BIOS
+    26 0000C224 A2 0FF1                         		MOV		[LEDS],AL
+    27 0000C227                                 
+    28 0000C227                                 fin:
+    29 0000C227 F4                              		HLT
+    30 0000C228 EB FD                           		JMP		fin
