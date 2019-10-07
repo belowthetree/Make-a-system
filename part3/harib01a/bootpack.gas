@@ -1,0 +1,20 @@
+	.file	"bootpack.c"
+	.text
+	.balign 2
+.globl _HariMain
+	.def	_HariMain;	.scl	2;	.type	32;	.endef
+_HariMain:
+	pushl	%ebp
+	movl	$655360, %edx
+	movl	%esp, %ebp
+L6:
+	movb	%dl, %al
+	andl	$15, %eax
+	movb	%al, (%edx)
+	incl	%edx
+	cmpl	$720895, %edx
+	jle	L6
+L7:
+	call	_io_hlt
+	jmp	L7
+	.def	_io_hlt;	.scl	2;	.type	32;	.endef
