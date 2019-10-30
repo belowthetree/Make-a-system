@@ -1,15 +1,15 @@
 org     0x8000
     jmp LABEL_BEGIN
-
+    
 %include    "pm.inc"
 
 ;GDT
 ;                               段基址           段界限              段属性
 LABEL_GDT:          Descriptor      0,          0,                  0               ;空描述符
-LABEL_DESC_CODE32:  Descriptor      0,          0xfffff,            DA_CR  | DA_32 ;非一致性代码
+LABEL_DESC_CODE32:  Descriptor      0,          0xfffff,            DA_CR  | DA_32 | DA_LIMIT_4K ;非一致性代码
 LABEL_DESC_VIDEO:   Descriptor      0xb8000,    0xffff,             DA_DRW            ;显存
-KERNELDATA:         Descriptor      0,          0xfffff,            DA_DRW | DA_32
-KERNEL:             Descriptor      0,          0xfffff,            DA_CR | DA_32 
+KERNELDATA:         Descriptor      0,          0xfffff,            DA_DRW | DA_32 | DA_LIMIT_4K
+KERNEL:             Descriptor   BaseOfKernel,  0xfffff,            DA_CR | DA_32 | DA_LIMIT_4K
 
 ;LABEL_DESC_DATA:    Descriptor      0, SegDataLen - 1,     DA_DRW
 ; GDT结束
@@ -25,23 +25,27 @@ SelectorKernelData      equ KERNELDATA          - LABEL_GDT
 SelectorKernel          equ KERNEL              - LABEL_GDT
 
 BaseOfKernelFile        equ 0x8200
-BaseOfStack             equ 0x0100
+BaseOfStack             equ 0x7c00
 BaseOfKernel            equ 0x30000
 KernelEntry             equ 0x30400
 
 [bits 16]
 LABEL_BEGIN:
     mov sp, BaseOfStack
+    mov eax, BaseOfKernelFile
+    mov eax, BaseOfKernel
+    mov eax, KernelEntry
     
 ;存入正确的 32 位段基址
-    xor eax, eax
-    mov ax, cs
-    shl eax, 4
-    add eax, LABEL_SEG_CODE32
-    mov word [LABEL_DESC_CODE32 + 2], ax
-    shr eax, 16
-    mov byte [LABEL_DESC_CODE32 + 4], al
-    mov byte [LABEL_DESC_CODE32 + 7], ah
+    ; xor eax, eax
+    ; mov ax, cs
+    ; shl eax, 4
+    ; add eax, LABEL_SEG_CODE32
+    ; mov word [LABEL_DESC_CODE32 + 2], ax
+    ; shr eax, 16
+    ; mov byte [LABEL_DESC_CODE32 + 4], al
+    ; mov byte [LABEL_DESC_CODE32 + 7], ah
+
 
     ;加载 GDT
     xor eax, eax
@@ -51,7 +55,7 @@ LABEL_BEGIN:
     mov dword [GdtPtr + 2], eax
 
     lgdt [GdtPtr]
-    
+
     cli
 
     in al, 92h
@@ -63,8 +67,8 @@ LABEL_BEGIN:
     or eax, 1
     mov cr0, eax
 
-    ;跳转进入保护系统
-    jmp dword SelectorCode32:0
+    ;跳转进入保护模式
+    jmp dword SelectorCode32:LABEL_SEG_CODE32
 
 [BITS   32]
 LABEL_SEG_CODE32:
@@ -123,12 +127,7 @@ InitKernel:
 
     ret
 
-loop:
-    hlt
-    jmp loop
 
-tes:
-    ret
 ;MemCpy:     ; cx 大小， esi 源， edi 目标
 MemCpy:
 	push	ebp

@@ -1,1 +1,0 @@
-void io_hlt();
