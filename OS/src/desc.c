@@ -1,6 +1,7 @@
-#include "int.h"
+#include "desc.h"
 #include "main.h"
 #include "tool.h"
+#include "process.h"
 
 void InitPIC()
 {
@@ -34,14 +35,32 @@ void InitPIC()
 
 void InitGDT()
 {
-    struct SEGMENT_DESCRIPTOR *gdt = (struct SEGMENT_DESCRIPTOR *) GDTBASE;
     int i;
+    gdt = (struct SEGMENT_DESCRIPTOR *) GDTBASE;
+    Code32      = gdt + 1;
+    KernelVRAM  = gdt + 2;
+    KernelData  = gdt + 3;
+    LDTCode     = gdt + 4;
+    LDTVRAM     = gdt + 5;
+    LDTData     = gdt + 6;
+    Seg_TSS     = gdt + 7;
 
-    for (i = 0;i < 8192;i++){
-        SetGDT(gdt + i, 0, 0, 0);
+    tss.ss0 = SelectorKernelData;
+
+    for (i = 0;i < 16;i++){
+        SetGDT(&gdt[i], 0, 0, 0);
     }
-    SetGDT(gdt + 1, 0x0, 0xffffffff, 0x4092);
-    SetGDT(gdt + 2, KERNELBASE, 0x300000, 0x409a);
+    SetGDT(Code32, 0x0, 0xffffffff, DA_32 | DA_DPL0 | DA_CR);
+    SetGDT(KernelVRAM, 0xb8000, 0xffff, DA_DRW | DA_DPL0);
+    SetGDT(KernelData, 0x0, 0xffffffff, DA_DRW | DA_32 | DA_DPL0);
+    SetGDT(LDTCode, 0x0, 0xffffffff, DA_LDT | DA_DPL1);
+    SetGDT(LDTVRAM, 0xb8000, 0xffff, DA_DRW | DA_DPL1);
+    SetGDT(LDTData, 0x0, 0xffffffff, DA_DRW | DA_DPL1);
+    SetGDT(Seg_TSS, (int) &tss, sizeof(tss) - 1, DA_386TSS);
+
+    InitTSS();
+
+    load_gdtr(0x77, gdt);
 
     return;
 }
@@ -49,14 +68,22 @@ void InitGDT()
 void InitIDT()
 {
     int i;
-    struct GATE_DESCRIPTOR *idt = (struct GATE_DESCRIPTOR *) IDTBASE;
 
     for (i = 0;i < 256;i++){
-        SetGate(idt + i, (int) register_clock, 1*8, DA_386IGate);
+        SetGate(idt + i, (int) register_clock, 8, DA_386IGate);
     }
+    SetGate(idt + 0x21, (int) _inthandler21, 8, DA_386IGate);
 
-    load_idtr(0x7ff, IDTBASE);
+    load_idtr(0x7ff, idt);
     return;
+}
+
+void InitTSS()
+{
+    memset((char*) &tss, 0, sizeof(tss));
+
+    tss.ss0 = SelectorKernelData;
+    tss.iobase = sizeof(tss);
 }
 
 void SetGate(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar)
@@ -85,4 +112,14 @@ void SetGDT(struct SEGMENT_DESCRIPTOR *sd, int addr, int limit, int ar)
     sd->base_high = (addr >> 24) & 0xff;
 
     return;
+}
+
+void SetLDT(int selector)
+{
+    // TODO
+}
+
+void isr_handler(pt_regs *regs)
+{
+    
 }

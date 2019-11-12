@@ -13,18 +13,31 @@
 
 #define VRAM        0xb8000
 
+#define uint32  unsigned int
+#define uint16  unsigned short
+#define uint8   unsigned char
+
 // kernel.asm
 void io_hlt();
 void io_sti();
 void io_out8(int port, int data);
+int io_in8(int);
 void io_cli();
 void io_delay();
 void load_idtr(int limit, int addr);
 void load_gdtr(int limit, int addr);
 int io_load_eflags();
+int load_cr0();
+void load_tr(short selector);
+void store_cr0(int cr0);
+unsigned int memtest_sub(unsigned int start, unsigned int end);
 void io_store_eflags(int eflags);
 void register_clock();
+void _inthandler21();
 void create_int();
+void restart(int pcb, int ldt);
+
+extern int Stack;
 
 // graph.c
 void memcpy(unsigned str, unsigned value, unsigned len);

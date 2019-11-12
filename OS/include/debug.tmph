@@ -1,0 +1,18 @@
+#ifndef _DEBUG_H
+#define _DEBUG_H
+
+// 打印函数调用栈
+void panic (const char *msg);
+// 打印段寄存器
+void print_cur_status();
+// 内核用格式化打印
+void printk(const char *format, ...);
+// 带颜色格式化打印
+void printk_color(char back, char front, const char *format, ...);
+
+
+
+
+
+
+#endif

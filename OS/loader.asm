@@ -6,9 +6,9 @@ org     0x8000
 ;GDT
 ;                               段基址           段界限              段属性
 LABEL_GDT:          Descriptor      0,          0,                  0               ;空描述符
-LABEL_DESC_CODE32:  Descriptor      0,          0xfffff,            DA_CR  | DA_32 | DA_LIMIT_4K ;非一致性代码
+LABEL_DESC_CODE32:  Descriptor      0,          0xfffff,            DA_CR | DA_DPL0 | DA_32 | DA_LIMIT_4K ;非一致性代码
 LABEL_DESC_VIDEO:   Descriptor      0xb8000,    0xffff,             DA_DRW            ;显存
-KERNELDATA:         Descriptor      0,          0xfffff,            DA_DRW | DA_32 | DA_LIMIT_4K
+KERNELDATA:         Descriptor      0,          0xfffff,            DA_DRW | DA_DPL0 | DA_32 | DA_LIMIT_4K
 KERNEL:             Descriptor   BaseOfKernel,  0xfffff,            DA_CR | DA_32 | DA_LIMIT_4K
 
 ;LABEL_DESC_DATA:    Descriptor      0, SegDataLen - 1,     DA_DRW
@@ -25,7 +25,7 @@ SelectorKernelData      equ KERNELDATA          - LABEL_GDT
 SelectorKernel          equ KERNEL              - LABEL_GDT
 
 BaseOfKernelFile        equ 0x8200
-BaseOfStack             equ 0x7c00
+BaseOfStack             equ 0x0100
 BaseOfKernel            equ 0x30000
 KernelEntry             equ 0x30400
 

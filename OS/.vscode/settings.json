@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "main.h": "c"
+        "main.h": "c",
+        "desc.h": "c",
+        "tool.h":"c",
+        "keyboard.h":"c",
+        "process.h":"c",
+        "start.h":"c",
     }
 }
