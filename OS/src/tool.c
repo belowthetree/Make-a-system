@@ -11,6 +11,7 @@ void prints(char str[])
         SetVRAM(font_x++, font_y, str[x], BLACK, DEEP_RED);
     }
     font_y++;
+    font_y %= 40;
     return;
 }
 
