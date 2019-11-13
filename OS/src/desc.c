@@ -68,12 +68,28 @@ void InitGDT()
 void InitIDT()
 {
     int i;
+    memset(interrupt_handlers, 0, sizeof(interrupt_handlers)*256);
 
     for (i = 0;i < 256;i++){
         SetGate(idt + i, (int) register_clock, 8, DA_386IGate);
     }
-    SetGate(idt + 0x21, (int) _inthandler21, 8, DA_386IGate);
-
+    SetGate(idt + IRQ0, irq0, 1*8, DA_386IGate);
+    SetGate(idt + IRQ1, irq1, 1*8, DA_386IGate);
+    SetGate(idt + IRQ2, irq2, 1*8, DA_386IGate);
+    SetGate(idt + IRQ3, irq3, 1*8, DA_386IGate);
+    SetGate(idt + IRQ4, irq4, 1*8, DA_386IGate);
+    SetGate(idt + IRQ5, irq5, 1*8, DA_386IGate);
+    SetGate(idt + IRQ6, irq6, 1*8, DA_386IGate);
+    SetGate(idt + IRQ7, irq7, 1*8, DA_386IGate);
+    SetGate(idt + IRQ8, irq8, 1*8, DA_386IGate);
+    SetGate(idt + IRQ9, irq9, 1*8, DA_386IGate);
+    SetGate(idt + IRQ10, irq10, 1*8, DA_386IGate);
+    SetGate(idt + IRQ11, irq11, 1*8, DA_386IGate);
+    SetGate(idt + IRQ12, irq12, 1*8, DA_386IGate);
+    SetGate(idt + IRQ13, irq13, 1*8, DA_386IGate);
+    SetGate(idt + IRQ14, irq14, 1*8, DA_386IGate);
+    SetGate(idt + IRQ15, irq15, 1*8, DA_386IGate);
+    
     load_idtr(0x7ff, idt);
     return;
 }
@@ -121,5 +137,21 @@ void SetLDT(int selector)
 
 void isr_handler(pt_regs *regs)
 {
-    
+    if (interrupt_handlers[regs->int_num]){
+        interrupt_handlers[regs->int_num](regs);
+    } else {
+        char msg[] = "Unhandle interrupt: ";
+        prints(msg);
+        printi(regs->int_num, 1);
+    }
+    // 发送中断结束信号给 PICs
+    // 按照我们的设置，从 32 号中断起为用户自定义中断
+    // 因为单片的 Intel 8259A 芯片只能处理 8 级中断 
+    // 故大于等于 40 的中断号是由从片处理的
+    if (regs->int_num >= 40) {
+        // 发送重设信号给从片
+        io_out8(0xa0, 0x20);
+    }
+    // 发送重设信号给主片
+    io_out8(0x20, 0x20);
 }

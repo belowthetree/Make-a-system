@@ -8,9 +8,9 @@ void prints(char str[])
     {
         if(!str[x])
             break;
-        SetVRAM(font_x++, 0, str[x], BLACK, DEEP_RED);
+        SetVRAM(font_x++, font_y, str[x], BLACK, DEEP_RED);
     }
-
+    font_y++;
     return;
 }
 

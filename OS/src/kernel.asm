@@ -87,7 +87,7 @@ isr_common_stub:
     mov ax, ds
     push eax
 
-    mov ax, 2*8     ; 内核数据段选择子
+    mov ax, 3*8     ; 内核数据段选择子
     mov ds, ax
     mov es, ax
     mov fs, ax
