@@ -154,4 +154,13 @@ void isr_handler(pt_regs *regs)
     }
     // 发送重设信号给主片
     io_out8(0x20, 0x20);
+    return;
+}
+
+void isr0_handler(pt_regs * regs)
+{
+    char msg[] = "Interrupt 0";
+    prints(msg);
+    printi(regs->int_num, 1);
+    return;
 }

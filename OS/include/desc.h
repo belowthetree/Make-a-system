@@ -153,6 +153,8 @@ void isr_handler(pt_regs *pt_regs);
 // 中断函数数组
 void (* interrupt_handlers[256])(pt_regs *);
 
+void isr0_handler(pt_regs *);
+
 // 异常
 void isr0();
 void isr1();
