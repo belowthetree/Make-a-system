@@ -90,6 +90,8 @@ void SetGate(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 void SetLDT();
 void SetLDT(int selector);
 
+void register_interrupt_handler(int irq, void * func);
+
 
 /* 选择子类型值说明 */
 /* 其中, SA_ : Selector Attribute */
@@ -145,8 +147,6 @@ struct pt_regs_t{
     uint32 useresp;
     uint32 ss;
 } pt_regs;
-
-void register_interrupt_handler(uint8 n);
 
 void isr_handler(pt_regs *pt_regs);
 

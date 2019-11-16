@@ -1,4 +1,4 @@
-CFLAGS = -m32 -ggdb -gstabs -O -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -I./include
+CFLAGS = -s -m32 -ggdb -gstabs -O -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -I./include
 
 vpath %.c ./src
 cfiles := $(wildcard ./src/*.c)

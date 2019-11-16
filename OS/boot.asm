@@ -11,6 +11,7 @@ LABEL_BEGIN:
     mov es, ax
     mov sp, BaseOfStack
 
+    xor cx, cx
     mov ax, 0x800
     mov es, ax
     mov ch, 0       ;柱面 0 
@@ -36,6 +37,14 @@ readloop:
     jmp readloop
 
 output:
+    xor dh, 1
+    cmp dh, 1
+    jz noadd
+    add ch, 1
+noadd:
+    mov cl, 1
+    cmp ch, 10
+    jl readloop
     mov esi, msg
     call putloop
 putloop:

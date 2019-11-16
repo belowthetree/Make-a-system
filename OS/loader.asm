@@ -25,7 +25,7 @@ SelectorKernelData      equ KERNELDATA          - LABEL_GDT
 SelectorKernel          equ KERNEL              - LABEL_GDT
 
 BaseOfKernelFile        equ 0x8200
-BaseOfStack             equ 0x0100
+BaseOfStack             equ 0x03ff
 BaseOfKernel            equ 0x30000
 KernelEntry             equ 0x30400
 
