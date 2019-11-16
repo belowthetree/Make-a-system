@@ -25,9 +25,9 @@ void InitPIC()
     io_out8(0xa1, ICW4);
     io_delay();
 
-    io_out8(0x21, 0xfd);
+    io_out8(0x21, 0x0);
     io_delay();
-    io_out8(0xa1, 0xff);
+    io_out8(0xa1, 0x0);
     io_delay();
 
     return;
@@ -58,9 +58,8 @@ void InitGDT()
     SetGDT(LDTData, 0x0, 0xffffffff, DA_DRW | DA_DPL1);
     SetGDT(Seg_TSS, (int) &tss, sizeof(tss) - 1, DA_386TSS);
 
-    InitTSS();
-
-    load_gdtr(0x77, gdt);
+    //InitTSS();
+    load_gdtr(0x77, (int)gdt);
 
     return;
 }
@@ -68,29 +67,33 @@ void InitGDT()
 void InitIDT()
 {
     int i;
-    memset(interrupt_handlers, 0, sizeof(interrupt_handlers)*256);
+    
+    for(i = 0;i < 256;i++) {
+        interrupt_handlers[i] = 0;
+    }
 
     for (i = 0;i < 256;i++){
         SetGate(idt + i, (int) register_clock, 8, DA_386IGate);
     }
-    SetGate(idt + IRQ0, irq0, 1*8, DA_386IGate);
-    SetGate(idt + IRQ1, irq1, 1*8, DA_386IGate);
-    SetGate(idt + IRQ2, irq2, 1*8, DA_386IGate);
-    SetGate(idt + IRQ3, irq3, 1*8, DA_386IGate);
-    SetGate(idt + IRQ4, irq4, 1*8, DA_386IGate);
-    SetGate(idt + IRQ5, irq5, 1*8, DA_386IGate);
-    SetGate(idt + IRQ6, irq6, 1*8, DA_386IGate);
-    SetGate(idt + IRQ7, irq7, 1*8, DA_386IGate);
-    SetGate(idt + IRQ8, irq8, 1*8, DA_386IGate);
-    SetGate(idt + IRQ9, irq9, 1*8, DA_386IGate);
-    SetGate(idt + IRQ10, irq10, 1*8, DA_386IGate);
-    SetGate(idt + IRQ11, irq11, 1*8, DA_386IGate);
-    SetGate(idt + IRQ12, irq12, 1*8, DA_386IGate);
-    SetGate(idt + IRQ13, irq13, 1*8, DA_386IGate);
-    SetGate(idt + IRQ14, irq14, 1*8, DA_386IGate);
-    SetGate(idt + IRQ15, irq15, 1*8, DA_386IGate);
     
-    load_idtr(0x7ff, idt);
+    SetGate(idt + IRQ0, (int)irq0, 1*8, DA_386IGate);
+    SetGate(idt + IRQ1, (int)irq1, 1*8, DA_386IGate);
+    SetGate(idt + IRQ2, (int)irq2, 1*8, DA_386IGate);
+    SetGate(idt + IRQ3, (int)irq3, 1*8, DA_386IGate);
+    SetGate(idt + IRQ4, (int)irq4, 1*8, DA_386IGate);
+    SetGate(idt + IRQ5, (int)irq5, 1*8, DA_386IGate);
+    SetGate(idt + IRQ6, (int)irq6, 1*8, DA_386IGate);
+    SetGate(idt + IRQ7, (int)irq7, 1*8, DA_386IGate);
+    SetGate(idt + IRQ8, (int)irq8, 1*8, DA_386IGate);
+    SetGate(idt + IRQ9, (int)irq9, 1*8, DA_386IGate);
+    SetGate(idt + IRQ10, (int)irq10, 1*8, DA_386IGate);
+    SetGate(idt + IRQ11, (int)irq11, 1*8, DA_386IGate);
+    SetGate(idt + IRQ12, (int)irq12, 1*8, DA_386IGate);
+    SetGate(idt + IRQ13, (int)irq13, 1*8, DA_386IGate);
+    SetGate(idt + IRQ14, (int)irq14, 1*8, DA_386IGate);
+    SetGate(idt + IRQ15, (int)irq15, 1*8, DA_386IGate);
+    
+    load_idtr(0x7ff, (int)idt);
     return;
 }
 
@@ -137,6 +140,8 @@ void SetLDT(int selector)
 
 void isr_handler(pt_regs *regs)
 {
+    printi(2, 1);
+    while(1);
     if (interrupt_handlers[regs->int_num]){
         interrupt_handlers[regs->int_num](regs);
     } else {
@@ -144,16 +149,26 @@ void isr_handler(pt_regs *regs)
         prints(msg);
         printi(regs->int_num, 1);
     }
+    return;
+}
+
+void irq_handler(pt_regs *regs)
+{
     // 发送中断结束信号给 PICs
     // 按照我们的设置，从 32 号中断起为用户自定义中断
     // 因为单片的 Intel 8259A 芯片只能处理 8 级中断 
     // 故大于等于 40 的中断号是由从片处理的
+    
     if (regs->int_num >= 40) {
         // 发送重设信号给从片
         io_out8(0xa0, 0x20);
     }
     // 发送重设信号给主片
     io_out8(0x20, 0x20);
+
+    if (interrupt_handlers[regs->int_num]) {
+        interrupt_handlers[regs->int_num](regs);
+    }
     return;
 }
 
@@ -163,4 +178,11 @@ void isr0_handler(pt_regs * regs)
     prints(msg);
     printi(regs->int_num, 1);
     return;
+}
+
+void register_interrupt_handler(int irq, void* func) // int func
+{
+    interrupt_handlers[irq] = func;
+    printi(interrupt_handlers[irq],1);
+    return ;
 }

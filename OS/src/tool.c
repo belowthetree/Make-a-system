@@ -11,6 +11,7 @@ void prints(char str[])
         SetVRAM(font_x++, font_y, str[x], BLACK, DEEP_RED);
     }
     font_y++;
+    font_x = 0;
     font_y %= 40;
     return;
 }
@@ -38,6 +39,13 @@ void printi(int data, int y)
     while(i-->0)
     {
         SetVRAM(font_x++, font_y, str[i], BLACK, WHITE);
+    }
+
+    if (y)
+    {
+        font_y++;
+        font_x = 0;
+        font_y %= 40;
     }
 
     return;
@@ -101,13 +109,71 @@ unsigned int getmem_sub(unsigned int start, unsigned int end)
     return i;
 }
 
-void memset(char *str, char value, int size)
+void memset(char *str, char value, unsigned int size)
 {
-    int i;
-    for (i = 0;i < size;i++)
+    unsigned int i;
+    for (i = 0;i < size;++i)
     {
-        str[i] = value;
+        *(str + i) = value;
     }
 
     return;
+}
+
+void printf(const char *str, ...)
+{
+    char * esp;
+    asm volatile ("movl %%esp, %0":"=r"(esp));
+    int i = 12;
+
+    while(*str)
+    {
+        if (*str == '%')
+        {
+            ++str;
+            if (*str == 'd')
+            {
+                printi(*(esp + i), 0);
+                i += sizeof(int);
+            }
+            if (*str == 's')
+            {
+                for (;((char *)(*(int *)esp))[i];i++)
+                {
+                    SetVRAM(font_x++, font_y, ((char *)(*(int *)esp))[i], BLACK, DEEP_RED);
+                    font_x++;
+                    font_y += font_x / 80;
+                    font_x %= 80;
+                    font_y %= 40;
+                }
+            }
+            else if (*str == 'c')
+            {
+                SetVRAM(font_x++, font_y, *(esp + i), BLACK, DEEP_RED);
+                font_x++;
+                font_y += font_x / 80;
+                font_x %= 80;
+                font_y %= 40;
+                ++i;
+            }
+            else
+            {
+                SetVRAM(font_x++, font_y, *str, BLACK, DEEP_RED);
+                font_x++;
+                font_y += font_x / 80;
+                font_x %= 80;
+                font_y %= 40;
+            }
+            ++str;
+        }
+        else if (*str == '\n')
+        {
+            font_x = 0;
+            ++font_y;
+            font_y %= 40;
+        }
+        else
+            SetVRAM(font_x++, font_y, *str, BLACK, DEEP_RED);
+        ++str;
+    }
 }

@@ -53,6 +53,7 @@ void WriteMem8(char *addr, char value);
 
 #define DA_386IGate	  0x8E	// 386 中断门类型值
 void Clock();
+void Clock2();
 
 
 #endif
