@@ -14,7 +14,10 @@ _start:
     jmp $
 
 restart:
-    ;lldt [esp + 8]
+    xor eax, eax
+    mov ax, 7*8
+    ltr ax
+    lldt [esp + 8]
     mov esp, [esp + 4]
 
     ; pop gs
@@ -112,7 +115,7 @@ IRQ 15, 47 ; IDE1 传输控制使用
 [GLOBAL irq_common_stub]
 [EXTERN irq_handler]
 irq_common_stub:
-    pusha ; pushes edi, esi, ebp, esp, ebx, edx, ecx, eax
+    pushad ; pushes edi, esi, ebp, esp, ebx, edx, ecx, eax
 
     mov ax, ds
     push eax ; 保存数据段描述符

@@ -25,9 +25,9 @@ void InitPIC()
     io_out8(0xa1, ICW4);
     io_delay();
 
-    io_out8(0x21, 0x0);
+    io_out8(0x21, 0xff);
     io_delay();
-    io_out8(0xa1, 0x0);
+    io_out8(0xa1, 0xff);
     io_delay();
 
     return;
@@ -67,15 +67,47 @@ void InitGDT()
 void InitIDT()
 {
     int i;
+    idt = (struct GATE_DESCRIPTOR *)IDTBASE;
     
     for(i = 0;i < 256;i++) {
         interrupt_handlers[i] = 0;
     }
-
     for (i = 0;i < 256;i++){
         SetGate(idt + i, (int) register_clock, 8, DA_386IGate);
     }
     
+    // SetGate(idt + 0, (int)isr0, 1*8, 0x8e);
+    // SetGate(idt + 1, (int)isr1, 1*8, 0x8e);
+    // SetGate(idt + 2, (int)isr2, 1*8, 0x8e);
+    // SetGate(idt + 3, (int)isr3, 1*8, 0x8e);
+    // SetGate(idt + 4, (int)isr4, 1*8, 0x8e);
+    // SetGate(idt + 5, (int)isr5, 1*8, 0x8e);
+    // SetGate(idt + 6, (int)isr6, 1*8, 0x8e);
+    // SetGate(idt + 7, (int)isr7, 1*8, 0x8e);
+    // SetGate(idt + 8, (int)isr8, 1*8, 0x8e);
+    // SetGate(idt + 9, (int)isr9, 1*8, 0x8e);
+    // SetGate(idt + 0, (int)isr10, 1*8, 0x8e);
+    // SetGate(idt + 11, (int)isr11, 1*8, 0x8e);
+    // SetGate(idt + 12, (int)isr12, 1*8, 0x8e);
+    // SetGate(idt + 13, (int)isr13, 1*8, 0x8e);
+    // SetGate(idt + 14, (int)isr14, 1*8, 0x8e);
+    // SetGate(idt + 15, (int)isr15, 1*8, 0x8e);
+    // SetGate(idt + 16, (int)isr16, 1*8, 0x8e);
+    // SetGate(idt + 17, (int)isr17, 1*8, 0x8e);
+    // SetGate(idt + 18, (int)isr18, 1*8, 0x8e);
+    // SetGate(idt + 19, (int)isr19, 1*8, 0x8e);
+    // SetGate(idt + 20, (int)isr20, 1*8, 0x8e);
+    // SetGate(idt + 21, (int)isr21, 1*8, 0x8e);
+    // SetGate(idt + 22, (int)isr22, 1*8, 0x8e);
+    // SetGate(idt + 23, (int)isr23, 1*8, 0x8e);
+    // SetGate(idt + 24, (int)isr24, 1*8, 0x8e);
+    // SetGate(idt + 25, (int)isr25, 1*8, 0x8e);
+    // SetGate(idt + 26, (int)isr26, 1*8, 0x8e);
+    // SetGate(idt + 27, (int)isr27, 1*8, 0x8e);
+    // SetGate(idt + 28, (int)isr28, 1*8, 0x8e);
+    // SetGate(idt + 29, (int)isr29, 1*8, 0x8e);
+    // SetGate(idt + 30, (int)isr30, 1*8, 0x8e);
+    // SetGate(idt + 31, (int)isr31, 1*8, 0x8e);
     SetGate(idt + IRQ0, (int)irq0, 1*8, DA_386IGate);
     SetGate(idt + IRQ1, (int)irq1, 1*8, DA_386IGate);
     SetGate(idt + IRQ2, (int)irq2, 1*8, DA_386IGate);
@@ -102,6 +134,7 @@ void InitTSS()
     memset((char*) &tss, 0, sizeof(tss));
 
     tss.ss0 = SelectorKernelData;
+    tss.esp0 = 0x3ff;
     tss.iobase = sizeof(tss);
 }
 
@@ -146,7 +179,7 @@ void isr_handler(pt_regs *regs)
         interrupt_handlers[regs->int_num](regs);
     } else {
         char msg[] = "Unhandle interrupt: ";
-        prints(msg);
+        printf(msg);
         printi(regs->int_num, 1);
     }
     return;
@@ -175,7 +208,7 @@ void irq_handler(pt_regs *regs)
 void isr0_handler(pt_regs * regs)
 {
     char msg[] = "Interrupt 0";
-    prints(msg);
+    printf(msg);
     printi(regs->int_num, 1);
     return;
 }

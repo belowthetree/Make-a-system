@@ -1,21 +1,6 @@
 #include "tool.h"
 #include "main.h"
 
-void prints(char str[])
-{
-    int x;
-    for(x = 0; x < 30;x++)
-    {
-        if(!str[x])
-            break;
-        SetVRAM(font_x++, font_y, str[x], BLACK, DEEP_RED);
-    }
-    font_y++;
-    font_x = 0;
-    font_y %= 40;
-    return;
-}
-
 void printi(int data, int y)
 {
     int sum = 0;
@@ -123,8 +108,7 @@ void memset(char *str, char value, unsigned int size)
 void printf(const char *str, ...)
 {
     char * esp;
-    asm volatile ("movl %%esp, %0":"=r"(esp));
-    int i = 12;
+    int i = 4;
 
     while(*str)
     {
@@ -141,7 +125,6 @@ void printf(const char *str, ...)
                 for (;((char *)(*(int *)esp))[i];i++)
                 {
                     SetVRAM(font_x++, font_y, ((char *)(*(int *)esp))[i], BLACK, DEEP_RED);
-                    font_x++;
                     font_y += font_x / 80;
                     font_x %= 80;
                     font_y %= 40;
@@ -150,7 +133,6 @@ void printf(const char *str, ...)
             else if (*str == 'c')
             {
                 SetVRAM(font_x++, font_y, *(esp + i), BLACK, DEEP_RED);
-                font_x++;
                 font_y += font_x / 80;
                 font_x %= 80;
                 font_y %= 40;
@@ -159,7 +141,6 @@ void printf(const char *str, ...)
             else
             {
                 SetVRAM(font_x++, font_y, *str, BLACK, DEEP_RED);
-                font_x++;
                 font_y += font_x / 80;
                 font_x %= 80;
                 font_y %= 40;

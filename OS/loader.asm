@@ -25,6 +25,7 @@ SelectorKernelData      equ KERNELDATA          - LABEL_GDT
 SelectorKernel          equ KERNEL              - LABEL_GDT
 
 BaseOfKernelFile        equ 0x8200
+TmpStack                equ 0x03ff
 BaseOfStack             equ 0x03ff
 BaseOfKernel            equ 0x30000
 KernelEntry             equ 0x30400
@@ -32,20 +33,6 @@ KernelEntry             equ 0x30400
 [bits 16]
 LABEL_BEGIN:
     mov sp, BaseOfStack
-    mov eax, BaseOfKernelFile
-    mov eax, BaseOfKernel
-    mov eax, KernelEntry
-    
-;存入正确的 32 位段基址
-    ; xor eax, eax
-    ; mov ax, cs
-    ; shl eax, 4
-    ; add eax, LABEL_SEG_CODE32
-    ; mov word [LABEL_DESC_CODE32 + 2], ax
-    ; shr eax, 16
-    ; mov byte [LABEL_DESC_CODE32 + 4], al
-    ; mov byte [LABEL_DESC_CODE32 + 7], ah
-
 
     ;加载 GDT
     xor eax, eax
@@ -72,37 +59,29 @@ LABEL_BEGIN:
 
 [BITS   32]
 LABEL_SEG_CODE32:
+    xor ax, ax
     mov ax, SelectorVideo
     mov gs, ax
+    xor ax, ax
+    mov ax, SelectorKernelData
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+
 
     mov edi, (80 * 1 + 20)
     mov ah, 0Ch
     mov al, 'P'
     mov [gs:edi], ax
 
-    ;打印 ELF 头部
 
-printelf:
-    mov ax, SelectorKernelData
-    mov ds, ax
-    mov es, ax
-    mov al, byte [BaseOfKernelFile + 1]
-    mov ah, 0x0c
-    mov edi, (80 * 1 + 20)*2
-    mov [gs:edi], ax
-    mov al, byte [BaseOfKernelFile + 2]
-    mov ah, 0x0c
-    mov edi, (80 * 2 + 21)*2
-    mov [gs:edi], ax
-    mov al, byte [BaseOfKernelFile + 3]
-    mov ah, 0x0c
-    mov edi, (80 * 3 + 22)*2
-    mov [gs:edi], ax
 
     call InitKernel
     
     jmp KernelEntry
 
+;   从 0x8000 开始到 0x30000 共占用320个扇区
 InitKernel:
     xor   esi, esi
     mov   cx, word [BaseOfKernelFile+2Ch];`. ecx <- pELFHdr->e_phnum

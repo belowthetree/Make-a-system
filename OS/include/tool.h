@@ -3,7 +3,6 @@
 
 int font_x, font_y;
 
-void prints(char str []);
 void printi(int data, int y);
 void printf(const char *str, ...);
 

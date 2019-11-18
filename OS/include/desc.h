@@ -10,7 +10,7 @@
 #define ICW4    0x001
 
 #define GDTBASE 0x270000
-#define IDTBASE 0x10000
+#define IDTBASE 0x300000
 #define KERNELBASE  0x30000
 
 struct SEGMENT_DESCRIPTOR{
@@ -59,7 +59,7 @@ TSS tss;
 
 // 描述符数组
 struct SEGMENT_DESCRIPTOR *gdt;
-struct GATE_DESCRIPTOR idt[256];
+struct GATE_DESCRIPTOR *idt;
 
 // LDT
 struct SEGMENT_DESCRIPTOR * Code32;
@@ -71,15 +71,14 @@ struct SEGMENT_DESCRIPTOR * LDTData;
 struct SEGMENT_DESCRIPTOR * Seg_TSS;
 
 #define SelectorCode32          8
-#define SelectorKernelData      2*8
-#define SelectorKernelVRAM      3*8
+#define SelectorKernelVRAM      2*8
+#define SelectorKernelData      3*8
 #define SelectorLDTCode         4*8
 #define SelectorLDTVRAM         5*8
 #define SelectorLDTData         6*8
 #define SelectorTSS             7*8
 
 void InitPIC();
-
 void InitGDT();
 void InitIDT();
 void InitTSS();

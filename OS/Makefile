@@ -1,4 +1,4 @@
-CFLAGS = -s -m32 -ggdb -gstabs -O -fstrength-reduce -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -I./include
+CFLAGS = -s -m32 -O -fstrength-reduce -fomit-frame-pointer -nostdinc -finline-functions -fno-builtin -I./include
 
 vpath %.c ./src
 cfiles := $(wildcard ./src/*.c)
@@ -8,7 +8,7 @@ kernel.bin: $(objects)
 	ld -m elf_i386 kernel.o $(objects) -o kernel.bin -e _start -Ttext 0x30400
 
 $(objects):%.o:%.c
-	gcc-9 -c $(CFLAGS) $< -o $@
+	gcc -c $(CFLAGS) $< -o $@
 
 .PHONY:clean
 clean:

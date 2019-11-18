@@ -1,12 +1,11 @@
-
-#include "main.h"
 #ifndef _MEMORY_MANAGER_H
 #define _MEMORY_MANAGER_H
+#include "main.h"
 
 // 支持的最大物理内存 (512MB)
-static int MAX_PHY_SIZE;
+int MAX_PHY_SIZE;
 // 支持的物理页的个数
-static int MAX_PAGE_NUM;
+int MAX_PAGE_NUM;
 // 物理内存页框大小
 #define PHYSIC_PAGE_SIZE    0x1000
 // 页掩码按照4096对齐地址
@@ -18,7 +17,7 @@ static int MAX_PAGE_NUM;
 // 动态分配物理页的总页数
 extern uint32   phy_page_count;
 
-uint8 * memory_manager;
+uint32 * memory_manager;
 
 // 分配一个页
 uint32 MallocPage();

@@ -22,7 +22,7 @@ typedef struct p_stack_frame{
     int eip;
     int cs;
     int eflags;
-    int esp;;
+    int esp;
     int ss;
 }STACK_FRAME;
 

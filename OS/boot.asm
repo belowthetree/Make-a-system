@@ -37,11 +37,13 @@ readloop:
     jmp readloop
 
 output:
+    ; 磁头翻面
     xor dh, 1
     cmp dh, 1
     jz noadd
     add ch, 1
 noadd:
+    ; 连续装载 10 个柱面，总计 2 * 10 * 18 - 1 = 360 个扇区
     mov cl, 1
     cmp ch, 10
     jl readloop
