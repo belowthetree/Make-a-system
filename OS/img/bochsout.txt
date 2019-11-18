@@ -13,7 +13,7 @@
 00000000000i[     ]   3dnow! support: no
 00000000000i[     ]   SEP support: yes
 00000000000i[     ]   SSE support: sse2
-00000000000i[     ]   XSAVE support: no 
+00000000000i[     ]   XSAVE support: no
 00000000000i[     ]   AES support: no
 00000000000i[     ]   MOVBE support: no
 00000000000i[     ]   ADX support: no
