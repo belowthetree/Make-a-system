@@ -21,7 +21,7 @@ typedef struct p_stack_frame{
     int retaddr;    // kernel.asm::save()
     int eip;
     int cs;
-    int eflags;
+    // int eflags;
     int esp;
     int ss;
 }STACK_FRAME;

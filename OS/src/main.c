@@ -20,9 +20,9 @@ void main()
     InitMemory();
 
     //InitTimer(1);
+    io_sti();
     InitProcess();
     timer = 0;
-    io_sti();
     
 
     for(;;)

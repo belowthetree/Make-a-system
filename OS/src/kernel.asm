@@ -14,21 +14,24 @@ _start:
     jmp $
 
 restart:
-    xor eax, eax
-    mov ax, 7*8
-    ltr ax
-    lldt [esp + 8]
+    ; xor eax, eax
+    ; mov ax, 7*8
+    ; ltr ax
+    ; lldt [esp + 8]
+    mov eax, esp
     mov esp, [esp + 4]
+    add esp, 13 * 4
+    retf
 
     ; pop gs
     ; pop fs
     ; pop es
     ; pop ds
-    add esp, 16
-    popad
+    ; add esp, 16
+    ; popad
 
-    add esp, 4
-    iretd
+    ; add esp, 4
+    ; iret
 
 %macro ISR_NOERRCODE 1
 [GLOBAL isr%1]

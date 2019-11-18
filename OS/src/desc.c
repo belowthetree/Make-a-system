@@ -53,9 +53,9 @@ void InitGDT()
     SetGDT(Code32, 0x0, 0xffffffff, DA_32 | DA_DPL0 | DA_CR);
     SetGDT(KernelVRAM, 0xb8000, 0xffff, DA_DRW | DA_DPL0);
     SetGDT(KernelData, 0x0, 0xffffffff, DA_DRW | DA_32 | DA_DPL0);
-    SetGDT(LDTCode, 0x0, 0xffffffff, DA_LDT | DA_DPL1);
-    SetGDT(LDTVRAM, 0xb8000, 0xffff, DA_DRW | DA_DPL1);
-    SetGDT(LDTData, 0x0, 0xffffffff, DA_DRW | DA_DPL1);
+    SetGDT(LDTCode, 0x0, 0xffffffff, DA_C | DA_32 | DA_DPL3);
+    SetGDT(LDTVRAM, 0xb8000, 0xffff, DA_DRWA | DA_32 | DA_DPL3);
+    SetGDT(LDTData, 0x0, 0xffffffff, DA_DRW | DA_DPL3);
     SetGDT(Seg_TSS, (int) &tss, sizeof(tss) - 1, DA_386TSS);
 
     //InitTSS();
