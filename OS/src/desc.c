@@ -174,7 +174,6 @@ void SetLDT(int selector)
 void isr_handler(pt_regs *regs)
 {
     printi(2, 1);
-    while(1);
     if (interrupt_handlers[regs->int_num]){
         interrupt_handlers[regs->int_num](regs);
     } else {

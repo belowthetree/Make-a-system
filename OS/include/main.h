@@ -33,7 +33,6 @@ void store_cr0(int cr0);
 unsigned int memtest_sub(unsigned int start, unsigned int end);
 void io_store_eflags(int eflags);
 void register_clock();
-void _inthandler21();
 void create_int();
 void restart(int pcb, int ldt);
 

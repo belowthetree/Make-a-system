@@ -73,9 +73,9 @@ struct SEGMENT_DESCRIPTOR * Seg_TSS;
 #define SelectorCode32          8
 #define SelectorKernelVRAM      2*8
 #define SelectorKernelData      3*8
-#define SelectorLDTCode         4*8
-#define SelectorLDTVRAM         5*8
-#define SelectorLDTData         6*8
+#define SelectorLDTCode         4*8 + SA_RPL3
+#define SelectorLDTVRAM         5*8 + SA_RPL3
+#define SelectorLDTData         6*8 + SA_RPL3
 #define SelectorTSS             7*8
 
 void InitPIC();

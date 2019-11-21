@@ -1,11 +1,11 @@
 global  _start
 global  io_hlt, io_sti, io_out8, io_in8, io_cli, io_delay, io_load_eflags, io_store_eflags
 global  load_idtr, load_gdtr, load_cr0, store_cr0, load_tr
-global  memcpy, register_clock, create_int, _inthandler21, memtest_sub, restart
+global  memcpy, register_clock, create_int, memtest_sub, restart
 global  isr_common_stub
 global  Stack
 
-extern  main, Clock, printi, prints, inthandler21, isr_handler
+extern  main, Clock, printi, prints, isr_handler
 
 [section .text]
 _start:
@@ -18,20 +18,24 @@ restart:
     ; mov ax, 7*8
     ; ltr ax
     ; lldt [esp + 8]
+    mov ax, 6*8 + 3
+    mov ds, ax
+    mov gs, ax
+    mov es, ax
     mov eax, esp
     mov esp, [esp + 4]
     add esp, 13 * 4
     retf
+    ; mov esp, [esp + 4]
 
     ; pop gs
     ; pop fs
     ; pop es
     ; pop ds
-    ; add esp, 16
     ; popad
 
     ; add esp, 4
-    ; iret
+    ; iretd
 
 %macro ISR_NOERRCODE 1
 [GLOBAL isr%1]
@@ -263,9 +267,6 @@ register_clock:
     call Clock
     iretd
 
-_inthandler21:
-    call inthandler21
-    iretd
 
 memtest_sub:	; unsigned int memtest_sub(unsigned int start, unsigned int end)
 		PUSH	EDI						; �iEBX, ESI, EDI ���g�������̂Łj
@@ -305,3 +306,4 @@ welcome:
     db "Here in kernel", 0
 
 Stack:
+    times 1024 db 0
