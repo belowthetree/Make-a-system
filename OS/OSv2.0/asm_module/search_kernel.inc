@@ -44,7 +44,6 @@ Label_Goto_Next_Sector_In_Root_Dir:
     jmp     Label_Search_In_Root_Dir_Begin
 ;   没有找到 Loader.bin
 Label_No_LoaderBin:
-	jmp $
     mov     bx, 000ch
     mov     dx, 0100h
     mov     cx, 14
@@ -53,7 +52,7 @@ Label_No_LoaderBin:
     mov     ax, 1301h
     mov     bp, NoKernelMessage
     int     10h
-    call    Stop
+	jmp $
 
 ;   解析FAT表项，获取地址, AH=FAT表项号
 Func_GetFATEntry:

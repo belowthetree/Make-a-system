@@ -18,18 +18,10 @@ LABEL_DESC_CODE32:  Descriptor      0,          0xfffff,            DA_CR | DA_D
 LABEL_DESC_DATA32:  Descriptor      0,          0xfffff,            DA_DPL0 | DA_DRW | DA_LIMIT_4K
 LABEL_DESC_VIDEO:   Descriptor      0xb8000,    0xffff,             DA_DRW            ;显存
 
-[SECTION idt]
-IDT:
-    times   0x50    dq  0
-IDT_END:
 
 GdtLen	equ	$ - LABEL_GDT
 GdtPtr	dw	GdtLen - 1
 	    dd	LABEL_GDT	;be carefull the address(after use org)!!!!!!
-
-IDT_POINTER:
-        dw  IDT_END - IDT - 1
-        dd  IDT
 
 SelectorCode32	equ	LABEL_DESC_CODE32 - LABEL_GDT
 SelectorData32	equ	LABEL_DESC_DATA32 - LABEL_GDT
@@ -95,8 +87,9 @@ Label_Start:
     %include "./asm_module/search_kernel.inc"
 ;   获取获取内存信息
     %include "./asm_module/get_memory_info.inc"
-
+    
 ;   开始进入保护模式
+Start_To_Protect:
     cli
 
     db 0x66
@@ -105,7 +98,7 @@ Label_Start:
     or      eax, 1
     mov     cr0, eax
 
-    jmp     SelectorCode32:Label_Protect
+    jmp     dword SelectorCode32:Label_Protect
 
 Stop:
     hlt
@@ -114,9 +107,94 @@ Stop:
 [SECTION .s32]
 [BITS 32]
 Label_Protect:
+    mov     ax, SelectorData32
+    mov     ds, ax
+    mov     es, ax
+    mov     fs, ax
+    mov     ss, ax
+    mov     esp, 0x7e00
+    
+    call    support_long_mode
+    test    eax, eax
+
+    jz      no_support
+;   配置分页
+	mov	dword	[0x90000],	0x91007
+	mov	dword	[0x90800],	0x91007		
+
+	mov	dword	[0x91000],	0x92007
+
+	mov	dword	[0x92000],	0x000083
+	mov	dword	[0x92008],	0x200083
+	mov	dword	[0x92010],	0x400083
+	mov	dword	[0x92018],	0x600083
+	mov	dword	[0x92020],	0x800083
+	mov	dword	[0x92028],	0xa00083
+    
+;   加载 64 位 GDT
+
+	db	0x66
+	lgdt	[GdtPtr64]
+	mov	ax,	0x10
+	mov	ds,	ax
+	mov	es,	ax
+	mov	fs,	ax
+	mov	gs,	ax
+	mov	ss,	ax
+
+	mov	esp,	7E00h
+
+;=======	开启PAE
+	mov	eax,	cr4
+	bts	eax,	5
+	mov	cr4,	eax
+
+;=======	加载页目录
+	mov	eax,	0x90000
+	mov	cr3,	eax
+
+;=======	开启长模式
+	mov	ecx,	0C0000080h		;IA32_EFER
+	rdmsr
+
+	bts	eax,	8
+	wrmsr
+
+;=======	使第 1 位和 32 位置 1，开启分页和保护模式
+	mov	eax,	cr0
+	bts	eax,	0
+	bts	eax,	31
+	mov	cr0,	eax
+
+	jmp	SelectorCode64:OffsetOfKernelFile
+
+support_long_mode:
+    mov     eax, 0x80000000
+    cpuid
+    cmp     eax, 0x80000001
+    setnb   al
+    jb  support_long_mode_done
+    mov     eax, 0x80000001
+    cpuid
+    bt      edx, 29
+    setc    al
+
+support_long_mode_done:
+    movzx   eax, al
+    ret
+
+no_support:
+    jmp $
 
 
+[SECTION idt]
+IDT:
+    times   0x50    dq  0
+IDT_END:
 
+IDT_POINTER:
+        dw  IDT_END - IDT - 1
+        dd  IDT
 
 ;   临时变量
 SectorNumber            dw  0

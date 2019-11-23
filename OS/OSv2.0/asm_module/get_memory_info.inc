@@ -185,6 +185,7 @@ Label_SVGA_Mode_Info_Finish:
 	pop	ax
 	mov	bp,	GetSVGAModeInfoOKMessage
 	int	10h
+	jmp Start_To_Protect
 
 [BITS 16]
 ;   以 16 进制显示 AL 中的数字
