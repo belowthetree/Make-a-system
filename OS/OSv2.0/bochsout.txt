@@ -32,37 +32,37 @@
 00000000000i[     ]   SB16 support: yes
 00000000000i[     ]   USB support: yes
 00000000000i[     ]   VGA extension support: vbe cirrus
-00000000000i[MEM0 ] allocated memory at 0x7fc020e4f010. after alignment, vector=0x7fc020e50000
+00000000000i[MEM0 ] allocated memory at 0x7f18b80bf010. after alignment, vector=0x7f18b80c0000
 00000000000i[MEM0 ] 32.00MB
 00000000000i[MEM0 ] mem block size = 0x00100000, blocks=32
 00000000000i[MEM0 ] rom at 0xfffe0000/131072 ('/usr/share/bochs/BIOS-bochs-latest')
-00000000000i[     ] lt_dlhandle is 0x557e017ec5d0
+00000000000i[     ] lt_dlhandle is 0x555ad2ce55d0
 00000000000i[PLGIN] loaded plugin libbx_hdimage.so
-00000000000i[     ] lt_dlhandle is 0x557e019b0070
+00000000000i[     ] lt_dlhandle is 0x555ad2ea9070
 00000000000i[PLGIN] loaded plugin libbx_pci.so
-00000000000i[     ] lt_dlhandle is 0x557e019b0c00
+00000000000i[     ] lt_dlhandle is 0x555ad2ea9c00
 00000000000i[PLGIN] loaded plugin libbx_pci2isa.so
-00000000000i[     ] lt_dlhandle is 0x557e019b1610
+00000000000i[     ] lt_dlhandle is 0x555ad2eaa610
 00000000000i[PLGIN] loaded plugin libbx_acpi.so
-00000000000i[     ] lt_dlhandle is 0x557e019b2020
+00000000000i[     ] lt_dlhandle is 0x555ad2eab020
 00000000000i[PLGIN] loaded plugin libbx_cmos.so
-00000000000i[     ] lt_dlhandle is 0x557e019b2960
+00000000000i[     ] lt_dlhandle is 0x555ad2eab960
 00000000000i[PLGIN] loaded plugin libbx_dma.so
-00000000000i[     ] lt_dlhandle is 0x557e019b3400
+00000000000i[     ] lt_dlhandle is 0x555ad2eac400
 00000000000i[PLGIN] loaded plugin libbx_pic.so
-00000000000i[     ] lt_dlhandle is 0x557e019b3cc0
+00000000000i[     ] lt_dlhandle is 0x555ad2eaccc0
 00000000000i[PLGIN] loaded plugin libbx_pit.so
-00000000000i[     ] lt_dlhandle is 0x557e019b4700
+00000000000i[     ] lt_dlhandle is 0x555ad2ead700
 00000000000i[PLGIN] loaded plugin libbx_floppy.so
-00000000000i[     ] lt_dlhandle is 0x557e019b5300
+00000000000i[     ] lt_dlhandle is 0x555ad2eae300
 00000000000i[PLGIN] loaded plugin libbx_vga.so
-00000000000i[     ] lt_dlhandle is 0x557e019b5b70
+00000000000i[     ] lt_dlhandle is 0x555ad2eaeb70
 00000000000i[PLGIN] loaded plugin libbx_ioapic.so
-00000000000i[     ] lt_dlhandle is 0x557e019b63c0
+00000000000i[     ] lt_dlhandle is 0x555ad2eaf3c0
 00000000000i[PLGIN] loaded plugin libbx_keyboard.so
-00000000000i[     ] lt_dlhandle is 0x557e019b6d50
+00000000000i[     ] lt_dlhandle is 0x555ad2eafd50
 00000000000i[PLGIN] loaded plugin libbx_harddrv.so
-00000000000i[     ] lt_dlhandle is 0x557e019c8e80
+00000000000i[     ] lt_dlhandle is 0x555ad2ec1e80
 00000000000i[PLGIN] loaded plugin libbx_pci_ide.so
 00000000000i[PLGIN] init_dev of 'pci' plugin device by virtual method
 00000000000i[PCI  ] 440FX Host bridge present at device 0, function 0
@@ -70,7 +70,7 @@
 00000000000i[PCI  ] PIIX3 PCI-to-ISA bridge present at device 1, function 0
 00000000000i[PLGIN] init_dev of 'cmos' plugin device by virtual method
 00000000000i[CMOS ] Using local time for initial clock
-00000000000i[CMOS ] Setting initial clock to: Sat Nov 23 16:55:38 2019 (time0=1574499338)
+00000000000i[CMOS ] Setting initial clock to: Sat Nov 23 19:44:35 2019 (time0=1574509475)
 00000000000i[PLGIN] init_dev of 'dma' plugin device by virtual method
 00000000000i[DMA  ] channel 4 used by cascade
 00000000000i[PLGIN] init_dev of 'pic' plugin device by virtual method
@@ -215,6 +215,40 @@
 00001533971i[VBIOS] VBE Bios $Id: vbe.c,v 1.64 2011/07/19 18:25:05 vruppert Exp $
 00001600001i[XGUI ] charmap update. Font Height is 16
 00014040959i[BIOS ] Booting from 0000:7c00
-00014471153i[MEM0 ] allocate_block: block=0x1 used 0x3 of 0x20
-00072165614i[     ] Ctrl-C detected in signal handler.
-00072165614i[XGUI ] Mouse capture off
+00014607309i[MEM0 ] allocate_block: block=0x1 used 0x3 of 0x20
+00014901601i[FDD  ] controller reset in software
+00015287334i[FDD  ] controller reset in software
+00015673078i[FDD  ] controller reset in software
+00016058822i[FDD  ] controller reset in software
+00016444562i[FDD  ] controller reset in software
+00016830295i[FDD  ] controller reset in software
+00017216061i[FDD  ] controller reset in software
+00017601805i[FDD  ] controller reset in software
+00017987545i[FDD  ] controller reset in software
+00018373278i[FDD  ] controller reset in software
+00018759011i[FDD  ] controller reset in software
+00019144755i[FDD  ] controller reset in software
+00019530495i[FDD  ] controller reset in software
+00046127683i[     ] Ctrl-C detected in signal handler.
+00046127683i[XGUI ] Mouse capture off
+00046127683i[     ] dbg: Quit
+00046127683i[CPU0 ] CPU is in real mode (active)
+00046127683i[CPU0 ] CS.mode = 16 bit
+00046127683i[CPU0 ] SS.mode = 16 bit
+00046127683i[CPU0 ] EFER   = 0x00000000
+00046127683i[CPU0 ] | EAX=60000010  EBX=0000000f  ECX=0000000e  EDX=00000200
+00046127683i[CPU0 ] | ESP=00007c00  EBP=00000429  ESI=0000805c  EDI=00009f00
+00046127683i[CPU0 ] | IOPL=0 id vip vif ac vm rf nt of df IF tf sf ZF af PF cf
+00046127683i[CPU0 ] | SEG sltr(index|ti|rpl)     base    limit G D
+00046127683i[CPU0 ] |  CS:1000( 0004| 0|  0) 00010000 0000ffff 0 0
+00046127683i[CPU0 ] |  DS:1000( 0005| 0|  0) 00010000 0000ffff 0 0
+00046127683i[CPU0 ] |  SS:1000( 0005| 0|  0) 00010000 0000ffff 0 0
+00046127683i[CPU0 ] |  ES:1000( 0005| 0|  0) 00010000 0000ffff 0 0
+00046127683i[CPU0 ] |  FS:0010( 0002| 0|  0) 00000000 ffffffff 1 0
+00046127683i[CPU0 ] |  GS:b800( 0005| 0|  0) 000b8000 0000ffff 0 0
+00046127683i[CPU0 ] | EIP=0000012e (0000012e)
+00046127683i[CPU0 ] | CR0=0x60000010 CR2=0x00000000
+00046127683i[CPU0 ] | CR3=0x00000000 CR4=0x00000000
+00046127683i[CMOS ] Last time is 1574509486 (Sat Nov 23 19:44:46 2019)
+00046127683i[XGUI ] Exit
+00046127683i[CTRL ] quit_sim called with exit code 0

@@ -8,7 +8,7 @@ OffsetOfLoader  equ     0x00
 
     jmp	short Label_Start
     nop
-	%include "./include/FAT_head.inc"
+	%include "./asm_module/FAT_head.inc"
 
 Label_Start:
     mov ax, cs
@@ -48,7 +48,7 @@ Label_Start:
 	int	13h
 
 ;   搜索并加载内核文件
-    %include "./include/search_loader.inc"
+    %include "./asm_module/search_loader.inc"
 
 Stop:
     hlt

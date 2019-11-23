@@ -9,8 +9,8 @@ MemoryStructBufferAddr  equ     0x7e00
     
     
     jmp     Label_Start
-%include "./include/FAT_head.inc"
-%include "./include/pm.inc"
+%include "./asm_module/FAT_head.inc"
+%include "./asm_module/pm.inc"
 [SECTION gdt]
 ;                               段基址           段界限              段属性
 LABEL_GDT:          Descriptor      0,          0,                  0               ;空描述符
@@ -18,9 +18,18 @@ LABEL_DESC_CODE32:  Descriptor      0,          0xfffff,            DA_CR | DA_D
 LABEL_DESC_DATA32:  Descriptor      0,          0xfffff,            DA_DPL0 | DA_DRW | DA_LIMIT_4K
 LABEL_DESC_VIDEO:   Descriptor      0xb8000,    0xffff,             DA_DRW            ;显存
 
+[SECTION idt]
+IDT:
+    times   0x50    dq  0
+IDT_END:
+
 GdtLen	equ	$ - LABEL_GDT
 GdtPtr	dw	GdtLen - 1
 	    dd	LABEL_GDT	;be carefull the address(after use org)!!!!!!
+
+IDT_POINTER:
+        dw  IDT_END - IDT - 1
+        dd  IDT
 
 SelectorCode32	equ	LABEL_DESC_CODE32 - LABEL_GDT
 SelectorData32	equ	LABEL_DESC_DATA32 - LABEL_GDT
@@ -83,19 +92,51 @@ Label_Start:
     sti
 
 ;   搜索内核文件
-    %include "./include/search_kernel.inc"
+    %include "./asm_module/search_kernel.inc"
+;   获取获取内存信息
+    %include "./asm_module/get_memory_info.inc"
+
+;   开始进入保护模式
+    cli
+
+    db 0x66
+    lgdt    [GdtPtr]
+    mov     eax, cr0
+    or      eax, 1
+    mov     cr0, eax
+
+    jmp     SelectorCode32:Label_Protect
 
 Stop:
     hlt
     jmp Stop
 
-;   临时变量位置
+[SECTION .s32]
+[BITS 32]
+Label_Protect:
+
+
+
+
+;   临时变量
 SectorNumber            dw  0
 RootDirSizeForLoop	    dw	RootDirSectors
 Odd                     db  0
 KernelFileName          db  "KERNEL  BIN",0
 OffsetOfKernelFileCount dd  OffsetOfKernelFile
+DisplayPosition		    dd	0
 
-NoKernelMessage:        db "No Kernel File",0
+NoKernelMessage:                db  "No Kernel File",0
+StartLoaderMessage:             db  "Come in Loader"
 
-StartLoaderMessage:     db  "Come in Loader"
+StartGetMemStructMessage:	    db	"Start Get Memory Struct."
+GetMemStructErrMessage:	        db	"Get Memory Struct ERROR"
+GetMemStructOKMessage:	        db	"Get Memory Struct SUCCESSFUL!"
+
+GetSVGAVBEInfoErrMessage:	db	"Get SVGA VBE Info ERROR"
+GetSVGAVBEInfoOKMessage:	db	"Get SVGA VBE Info SUCCESSFUL!"
+StartGetSVGAVBEInfoMessage:	    db	"Start Get SVGA VBE Info"
+
+StartGetSVGAModeInfoMessage:	db	"Start Get SVGA Mode Info"
+GetSVGAModeInfoErrMessage:	    db	"Get SVGA Mode Info ERROR"
+GetSVGAModeInfoOKMessage:	    db	"Get SVGA Mode Info SUCCESSFUL!"
