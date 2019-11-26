@@ -87,7 +87,15 @@ Label_Start:
     %include "./asm_module/search_kernel.inc"
 ;   获取获取内存信息
     %include "./asm_module/get_memory_info.inc"
-    
+    ;=======	设置 SVGA 模式(VESA VBE)
+Setup_SVGA:
+	mov	ax,	4F02h
+	mov	bx,	4180h	;========================mode : 0x180 or 0x143
+	int 	10h
+
+	cmp	ax,	004Fh
+	jnz	Label_SET_SVGA_Mode_VESA_VBE_FAIL
+
 ;   开始进入保护模式
 Start_To_Protect:
     cli
