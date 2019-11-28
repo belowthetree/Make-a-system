@@ -42,6 +42,53 @@ entry64:
 	movq	%rax,	%gs
 	movq	%rax,	%ss
 	movq	$0xffff800000007E00,	%rsp		/* rsp address */
+//	初始化中断表，因为内核初期比较脆弱，进行临时处理
+setup_IDT:
+//	中断地址
+	leaq	ignore_int(%rip),	%rdx
+//	段选择子
+	movq	$(0x08 << 16),	%rax
+	movw	%dx,	%ax
+//	P=1, DPL=0, type=0; IST=0
+	movq	$(0x8E00 << 32),	%rcx
+	addq	%rcx,	%rax
+	movl	%edx,	%ecx
+	shrl	$16,	%ecx
+	shlq	$48,	%rcx
+	addq	%rcx,	%rax
+	shrq	$32,	%rdx
+	leaq	IDT_Table(%rip),	%rdi
+	mov	$256,	%rcx
+rp_sidt:
+	movq	%rax,	(%rdi)
+	movq	%rdx,	8(%rdi)
+	addq	$0x10,	%rdi
+	dec	%rcx
+	jne	rp_sidt
+
+setup_TSS64:
+	leaq	TSS64_Table(%rip),	%rdx
+	xorq	%rax,	%rax
+	xorq	%rcx,	%rcx
+	movq	$0x89,	%rax
+	shlq	$40,	%rax
+	movl	%edx,	%ecx
+	shrl	$24,	%ecx
+	shlq	$56,	%rcx
+	addq	%rcx,	%rax
+	xorq	%rcx,	%rcx
+	movl	%edx,	%ecx
+	andl	$0xffffff,	%ecx
+	shlq	$16,	%rcx
+	addq	%rcx,	%rax
+	addq	$103,	%rax
+	leaq	GDT_Table(%rip),	%rdi
+	movq	%rax,	64(%rdi)
+	shrq	$32,	%rdx
+	movq	%rdx,	72(%rdi)
+
+//	mov	$0x40,	%ax
+//	ltr	%ax
 //  跳转到 C 函数
 	movq	go_to_kernel(%rip),	%rax		/* movq address */
 	pushq	$0x08
@@ -50,6 +97,74 @@ entry64:
 
 go_to_kernel:
 	.quad	Start_Kernel
+
+// 中断的初始处理函数
+.global ignore_int
+ignore_int:
+	cld
+	pushq	%rax
+	pushq	%rbx
+	pushq	%rcx
+	pushq	%rdx
+	pushq	%rbp
+	pushq	%rdi
+	pushq	%rsi
+
+	pushq	%r8
+	pushq	%r9
+	pushq	%r10
+	pushq	%r11
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15
+
+	movq	%es,	%rax
+	pushq	%rax
+	movq	%ds,	%rax
+	pushq	%rax
+
+	movq	$0x10,	%rax
+	movq	%rax,	%ds
+	movq	%rax,	%es
+
+	leaq	int_msg(%rip),	%rax			/* leaq get address */
+	pushq	%rax
+	movq	%rax,	%rdx
+	movq	$0x00000000,	%rdi
+	movq	$0x00ff0000,	%rsi
+	movq	$0,	%rax
+	callq	printf_color
+	addq	$0x8,	%rsp
+
+Loop:
+	jmp	Loop	
+
+	popq	%rax
+	movq	%rax,	%ds
+	popq	%rax
+	movq	%rax,	%es
+
+	popq	%r15
+	popq	%r14
+	popq	%r13
+	popq	%r12
+	popq	%r11
+	popq	%r10
+	popq	%r9
+	popq	%r8
+
+	popq	%rsi
+	popq	%rdi
+	popq	%rbp
+	popq	%rdx
+	popq	%rcx
+	popq	%rbx
+	popq	%rax
+	iretq
+
+int_msg:
+	.asciz "Unknown interrupt or fault at RIP\n"
 
 //  初始化页表
 .align 8
@@ -103,7 +218,7 @@ GDT_POINTER:
 GDT_LIMIT:  .word GDT_END - GDT_Table - 1
 GDT_BASE:   .quad GDT_Table
 
-.global     IDT_Table
+.global IDT_Table
 
 IDT_Table:  // 重复拷贝 8 字节的 0 一共 512 次
 	.fill  512,8,0

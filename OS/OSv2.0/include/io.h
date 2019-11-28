@@ -10,6 +10,8 @@ void printf(char *str, ...);
 void printf_color(uint32 BackColor, uint32 ForeColor, char *str, ...);
 void puti(int n);
 void puti_color(int n, uint32 BackColor, uint32 ForeColor);
+void putl(long n);
+void putl_color(long n, uint32 BackColor, uint32 ForeColor);
 void putx(int n, int isuper);
 void putx_color(int n, uint32 BackColor, uint32 ForeColor, int isuper);
 

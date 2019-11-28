@@ -61,6 +61,8 @@ void printf_color(uint32 BackColor, uint32 ForeColor, char *str, ...)
                 putx_color(va_arg(arg, int), BackColor, ForeColor, 0);
             else if (*str == 'X')
                 putx_color(va_arg(arg, int), BackColor, ForeColor, 1);
+            else if (*str == 'l' && *(str + 1) == 'd')
+                putl_color(va_arg(arg, long), BackColor, ForeColor);
         }
         else if (*str == '\n')
         {
@@ -106,6 +108,8 @@ void printf(char *str, ...)
                 putx(va_arg(arg, int), 0);
             else if (*str == 'X')
                 putx(va_arg(arg, int), 1);
+            else if (*str == 'l' && *(str + 1) == 'd')
+                putl(va_arg(arg, long));
         }
         else if (*str == '\n')
         {
@@ -161,6 +165,38 @@ void puti_color(int n, uint32 BackColor, uint32 ForeColor)
 void puti(int n)
 {
     puti_color(n, BLACK, WHITE);
+}
+
+void putl_color(long n, uint32 BackColor, uint32 ForeColor)
+{
+    int cnt = 0, i;
+    char num[25];
+    long tmp_n = n;
+    n = n < 0 ? -n : n;
+
+    while (n / 10)
+    {
+        num[cnt++] = '0' + n % 10;
+        n /= 10;
+    }
+    num[cnt++] = '0' + n % 10;
+    if (tmp_n < 0)
+        num[cnt++] = '-';
+    int t = cnt - 1;
+    for (i = 0;i < t;i++)
+    {
+        t = cnt - i - 1;
+        char tmp = num[i];
+        num[i] = num[t];
+        num[t] = tmp;
+    }
+    num[cnt] = '\0';
+    puts_color(num, BackColor, ForeColor);
+}
+
+void putl(long n)
+{
+    putl_color(n, BLACK, WHITE);
 }
 
 void putx_color(int n, uint32 BackColor, uint32 ForeColor, int isuper)
