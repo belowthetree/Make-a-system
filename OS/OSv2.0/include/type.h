@@ -6,6 +6,7 @@
 #define uint16  unsigned short
 #define uint8   unsigned char
 #define uint64	unsigned long
+#define BASE	0xffff800000000000
 
 
 

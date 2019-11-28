@@ -8,12 +8,19 @@ void puts(char *str);
 void puts_color(char *str, uint32 BackColor, uint32 ForeColor);
 void printf(char *str, ...);
 void printf_color(uint32 BackColor, uint32 ForeColor, char *str, ...);
-void puti(int n);
-void puti_color(int n, uint32 BackColor, uint32 ForeColor);
-void putl(long n);
-void putl_color(long n, uint32 BackColor, uint32 ForeColor);
-void putx(int n, int isuper);
-void putx_color(int n, uint32 BackColor, uint32 ForeColor, int isuper);
+void puti(int n, int align, int zero);
+void puti_color(int n, uint32 BackColor, uint32 ForeColor, int align, int zero);
+void putl(long n, int align, int zero);
+void putl_color(long n, uint32 BackColor, uint32 ForeColor, int align, int zero);
+void putx(int n, int isuper, int align, int zero);
+void putx_color(int n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero);
+
+void putui(unsigned int n, int align, int zero);
+void putui_color(unsigned int n, uint32 BackColor, uint32 ForeColor, int align, int zero);
+void putul(unsigned long n, int align, int zero);
+void putul_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int align, int zero);
+void putux(unsigned int n, int isuper, int align, int zero);
+void putux_color(unsigned int n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero);
 
 
 

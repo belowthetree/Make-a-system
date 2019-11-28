@@ -1,5 +1,6 @@
 #include "graph.h"
 #include "interrupt.h"
+#include "memory.h"
 
 void Start_Kernel(void)
 {
@@ -9,7 +10,9 @@ void Start_Kernel(void)
      0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
      0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
      0xffff800000007c00);
-	int i = *(int *)0xfff80000aa00000;
+
+    init_memory();
+
     char msg[] = "world";
     printf_color(BLACK, RED, "Fuck\n\t%s%d", msg, -123);
 	while(1)
