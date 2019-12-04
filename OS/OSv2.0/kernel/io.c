@@ -69,22 +69,28 @@ void printf_color(uint32 BackColor, uint32 ForeColor, char *str, ...)
             else if (*str == 's')
                 puts_color((char *)va_arg(arg, char*), BackColor, ForeColor);
             else if (*str == 'x')
-                putx_color(va_arg(arg, int), BackColor, ForeColor, 0, cnt, zero);
+                putx_color(va_arg(arg, long), BackColor, ForeColor, 0, cnt, zero);
             else if (*str == 'X')
-                putx_color(va_arg(arg, int), BackColor, ForeColor, 1, cnt, zero);
+                putx_color(va_arg(arg, long), BackColor, ForeColor, 1, cnt, zero);
             else if (*str == 'l' && *(str + 1) == 'd')
+            {
+                str++;
                 putl_color(va_arg(arg, long), BackColor, ForeColor, cnt, zero);
+            }
             else if (*str == 'u')
             {
                 str++;
                 if (*str == 'd')
                     putui_color(va_arg(arg, int), BackColor, ForeColor, cnt, zero);
                 else if (*str == 'x')
-                    putux_color(va_arg(arg, int), BackColor, ForeColor, 0, cnt, zero);
+                    putux_color(va_arg(arg, long), BackColor, ForeColor, 0, cnt, zero);
                 else if (*str == 'X')
-                    putux_color(va_arg(arg, int), BackColor, ForeColor, 1, cnt, zero);
+                    putux_color(va_arg(arg, long), BackColor, ForeColor, 1, cnt, zero);
                 else if (*str == 'l' && *(str + 1) == 'd')
-                    putul_color(va_arg(arg, long), BackColor, ForeColor, cnt, zero);
+                {
+                    str++;
+                    putl_color(va_arg(arg, long), BackColor, ForeColor, cnt, zero);
+                }
             }
             else
                 putchar_color(*str, BackColor, ForeColor);
@@ -141,22 +147,28 @@ void printf(char *str, ...)
             else if (*str == 's')
                 puts((char *)va_arg(arg, char*));
             else if (*str == 'x')
-                putx(va_arg(arg, int), 0, cnt, zero);
+                putx(va_arg(arg, long), 0, cnt, zero);
             else if (*str == 'X')
-                putx(va_arg(arg, int), 1, cnt, zero);
+                putx(va_arg(arg, long), 1, cnt, zero);
             else if (*str == 'l' && *(str + 1) == 'd')
+            {
+                str++;
                 putl(va_arg(arg, long), cnt, zero);
+            }
             else if (*str == 'u')
             {
                 str++;
                 if (*str == 'd')
                     putui(va_arg(arg, int), cnt, zero);
                 else if (*str == 'x')
-                    putux(va_arg(arg, int), 0, cnt, zero);
+                    putux(va_arg(arg, long), 0, cnt, zero);
                 else if (*str == 'X')
-                    putux(va_arg(arg, int), 1, cnt, zero);
+                    putux(va_arg(arg, long), 1, cnt, zero);
                 else if (*str == 'l' && *(str + 1) == 'd')
-                    putul(va_arg(arg, long), cnt, zero);
+                {
+                    str++;
+                    putl(va_arg(arg, long), cnt, zero);
+                }
             }
             else
                 putchar(*str);
@@ -260,7 +272,7 @@ void putl(long n, int align, int zero)
     putl_color(n, BLACK, WHITE, align, zero);
 }
 
-void putx_color(int n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero)
+void putx_color(long n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero)
 {
     int cnt = 0, i;
     char num[25];
@@ -309,7 +321,7 @@ void putx_color(int n, uint32 BackColor, uint32 ForeColor, int isuper, int align
     puts_color(num, BackColor, ForeColor);
 }
 
-void putx(int n, int isuper, int align, int zero)
+void putx(long n, int isuper, int align, int zero)
 {
     putx_color(n, BLACK, WHITE, isuper, align, zero);
 }
@@ -318,7 +330,6 @@ void putui_color(unsigned int n, uint32 BackColor, uint32 ForeColor, int align, 
 {
     unsigned int cnt = 0, i;
     char num[25];
-    n = n < 0 ? -n : n;
 
     while (n / 10)
     {
@@ -347,14 +358,13 @@ void putui_color(unsigned int n, uint32 BackColor, uint32 ForeColor, int align, 
 
 void putui(unsigned int n, int align, int zero)
 {
-    puti_color(n, BLACK, WHITE, align, zero);
+    putui_color(n, BLACK, WHITE, align, zero);
 }
 
 void putul_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int align, int zero)
 {
     unsigned int cnt = 0, i;
     char num[25];
-    n = n < 0 ? -n : n;
 
     while (n / 10)
     {
@@ -382,14 +392,13 @@ void putul_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int align,
 
 void putul(unsigned long n, int align, int zero)
 {
-    putl_color(n, BLACK, WHITE, align, zero);
+    putul_color(n, BLACK, WHITE, align, zero);
 }
 
-void putux_color(unsigned int n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero)
+void putux_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero)
 {
     unsigned int cnt = 0, i;
     char num[25];
-    n = n < 0 ? -n : n;
 
     while (n / 16)
     {
@@ -431,7 +440,14 @@ void putux_color(unsigned int n, uint32 BackColor, uint32 ForeColor, int isuper,
     puts_color(num, BackColor, ForeColor);
 }
 
-void putux(unsigned int n, int isuper, int align, int zero)
+void putux(unsigned long n, int isuper, int align, int zero)
 {
-    putx_color(n, BLACK, WHITE, isuper, align, zero);
+    putux_color(n, BLACK, WHITE, isuper, align, zero);
+}
+
+void memset(unsigned char *str, unsigned char c, long size)
+{
+    long i = 0;
+    while(i++<size)
+        *(str + i) = c;
 }

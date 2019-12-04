@@ -1,4 +1,4 @@
-CFLAGS = -mcmodel=large -fno-builtin -Iinclude
+CFLAGS = -mcmodel=large -Iinclude
 
 vpath %.c ./src
 cfiles := $(wildcard kernel/*.c)

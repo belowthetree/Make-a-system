@@ -1,4 +1,5 @@
 #include "graph.h"
+#include "memory.h"
 
 void InitGraph(uint32 *addr)
 {
@@ -8,6 +9,9 @@ void InitGraph(uint32 *addr)
     Pos.YResolution = 900;
     Pos.YCharSize = 16;
     Pos.XCharSize = 8;
+
+    Pos.FB_length = (Pos.XResolution * Pos.YResolution * 4 + 
+        PAGE_4K_SIZE - 1) & (PAGE_4K_MASK);
 }
 
 void TranslateX(int x)

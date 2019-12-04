@@ -12,17 +12,17 @@ void puti(int n, int align, int zero);
 void puti_color(int n, uint32 BackColor, uint32 ForeColor, int align, int zero);
 void putl(long n, int align, int zero);
 void putl_color(long n, uint32 BackColor, uint32 ForeColor, int align, int zero);
-void putx(int n, int isuper, int align, int zero);
-void putx_color(int n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero);
+void putx(long n, int isuper, int align, int zero);
+void putx_color(long n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero);
 
 void putui(unsigned int n, int align, int zero);
 void putui_color(unsigned int n, uint32 BackColor, uint32 ForeColor, int align, int zero);
 void putul(unsigned long n, int align, int zero);
 void putul_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int align, int zero);
-void putux(unsigned int n, int isuper, int align, int zero);
-void putux_color(unsigned int n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero);
+void putux(unsigned long n, int isuper, int align, int zero);
+void putux_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero);
 
-
+void memset(unsigned char *str, unsigned char c, long size);
 
 
 #endif
