@@ -32,11 +32,15 @@ PAGE_OFFSET))
 ((unsigned long)(kaddr) >> PAGE_2M_SHIFT))
 
 //// each zone index
-int ZONE_DMA_INDEX	= 0;
-int ZONE_NORMAL_INDEX	= 0;	//low 1GB RAM ,was mapped in pagetable
-int ZONE_UNMAPED_INDEX	= 0;	//above 1GB RAM,unmapped in pagetable
+static int ZONE_DMA_INDEX;
+static int ZONE_NORMAL_INDEX;	//low 1GB RAM ,was mapped in pagetable
+static int ZONE_UNMAPED_INDEX;	//above 1GB RAM,unmapped in pagetable
 
-unsigned long * Global_CR3 = NULL;
+static unsigned long * Global_CR3 = NULL;
+
+#define ZONE_DMA		(1 << 0)
+#define ZONE_NORMAL		(1 << 1)
+#define ZONE_UNMAPED	(1 << 2)
 
 #define PG_PTable_Maped	(1 << 0)// 映射过的页
 #define PG_Kernel_Init	(1 << 1)// 内核初始化程序
@@ -125,9 +129,8 @@ void init_memory();
 unsigned long * Get_gdt();
 void get_memory_info();
 
+struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags);
 unsigned long page_init(struct Page * page,unsigned long flags);
-
-
 
 
 

@@ -1,259 +1,368 @@
 #include "interrupt.h"
 #include "graph.h"
+#include "io.h"
 
-inline void set_intr_gate(unsigned int n,unsigned char ist,void * addr)
+void init_interrupt()
 {
-	set_gate((uint8 *)IDT_Table + 16*n , 0x8E , ist , addr);	//P,DPL=0,TYPE=E
+	interrupt[0] = IRQ0x20_interrupt;
+	interrupt[1] = IRQ0x21_interrupt;
+	interrupt[2] = IRQ0x22_interrupt;
+	interrupt[3] = IRQ0x23_interrupt;
+	interrupt[4] = IRQ0x24_interrupt;
+	interrupt[5] = IRQ0x25_interrupt;
+	interrupt[6] = IRQ0x26_interrupt;
+	interrupt[7] = IRQ0x27_interrupt;
+	interrupt[8] = IRQ0x28_interrupt;
+	interrupt[9] = IRQ0x29_interrupt;
+	interrupt[10] = IRQ0x2a_interrupt;
+	interrupt[11] = IRQ0x2b_interrupt;
+	interrupt[12] = IRQ0x2c_interrupt;
+	interrupt[13] = IRQ0x2d_interrupt;
+	interrupt[14] = IRQ0x2e_interrupt;
+	interrupt[15] = IRQ0x2f_interrupt;
+	interrupt[16] = IRQ0x30_interrupt;
+	interrupt[17] = IRQ0x31_interrupt;
+	interrupt[18] = IRQ0x32_interrupt;
+	interrupt[19] = IRQ0x33_interrupt;
+	interrupt[20] = IRQ0x34_interrupt;
+	interrupt[21] = IRQ0x35_interrupt;
+	interrupt[22] = IRQ0x36_interrupt;
+	interrupt[23] = IRQ0x37_interrupt;
+	int i;
+	for(i = 32;i < 56;i++)
+		set_intr_gate(i , 2 , interrupt[i - 32]);
+
+	printf_color(BLACK, RED, "8259A init \n");
+
+	//8259A-master	ICW1-4
+	io_out8(0x20,0x11);
+	io_out8(0x21,0x20);
+	io_out8(0x21,0x04);
+	io_out8(0x21,0x01);
+
+	//8259A-slave	ICW1-4
+	io_out8(0xa0,0x11);
+	io_out8(0xa1,0x28);
+	io_out8(0xa1,0x02);
+	io_out8(0xa1,0x01);
+
+	//只开启键盘中断
+	io_out8(0x21,0xfd);
+	io_out8(0xa1,0xff);
+
+	sti();
 }
 
-inline void set_trap_gate(unsigned int n,unsigned char ist,void * addr)
+void do_IRQ(unsigned long regs, unsigned long nr)
 {
-	set_gate((uint8 *)IDT_Table + 16*n , 0x8F , ist , addr);	//P,DPL=0,TYPE=F
+	unsigned char x;
+	printf_color(BLACK, RED, "do_IRQ:%08X\n", nr);
+	x = io_in8(0x60);
+	printf_color(BLACK, RED, "key code:%018X\n",x);
+	io_out8(0x20,0x20);
 }
 
-inline void set_system_gate(unsigned int n,unsigned char ist,void * addr)
+void io_out32(unsigned short port,unsigned int value)
 {
-	set_gate((uint8 *)IDT_Table + 16*n , 0xEF , ist , addr);	//P,DPL=3,TYPE=F
+	__asm__ __volatile__(	"outl	%0,	%%dx	\n\t"
+				"mfence			\n\t"
+				:
+				:"a"(value),"d"(port)
+				:"memory");
 }
 
-void set_gate(uint8 * addr, uint8 attr, uint8 ist, void * func)
+void io_out8(unsigned short port,unsigned char value)
 {
-	*((short *)addr) = (unsigned long)(func) & 0xffff;
-	*((short *)(addr + 2)) = 0x08;
-	//*(addr + 4) = 0;	
-	*(addr + 4) = (ist & 0xff);//TODO
-	*(addr + 5) = (attr & 0xff);
-	*((short *)(addr + 6)) = ((unsigned long)func >> 16) & 0xffff;
-	*((uint32 *)(addr + 10)) = ((unsigned long)func >> 48) & 0xffffffff;
+	__asm__ __volatile__(	"outb	%0,	%%dx	\n\t"
+				"mfence			\n\t"
+				:
+				:"a"(value),"d"(port)
+				:"memory");
 }
 
-void sys_vector_init()
+unsigned char io_in8(unsigned short port)
 {
-	set_trap_gate(0,1,divide_error);
-	set_trap_gate(1,1,debug);
-	set_intr_gate(2,1,nmi);
-	set_system_gate(3,1,int3);
-	set_system_gate(4,1,overflow);
-	set_system_gate(5,1,bounds);
-	set_trap_gate(6,1,undefined_opcode);
-	set_trap_gate(7,1,dev_not_available);
-	set_trap_gate(8,1,double_fault);
-	set_trap_gate(9,1,coprocessor_segment_overrun);
-	set_trap_gate(10,1,invalid_TSS);
-	set_trap_gate(11,1,segment_not_present);
-	set_trap_gate(12,1,stack_segment_fault);
-	set_trap_gate(13,1,general_protection);
-	set_trap_gate(14,1,page_fault);
-	//15 Intel reserved. Do not use.
-	set_trap_gate(16,1,x87_FPU_error);
-	set_trap_gate(17,1,alignment_check);
-	set_trap_gate(18,1,machine_check);
-	set_trap_gate(19,1,SIMD_exception);
-	set_trap_gate(20,1,virtualization_exception);
-
-	//set_system_gate(SYSTEM_CALL_VECTOR,7,system_call);
+	unsigned char ret = 0;
+	__asm__ __volatile__(	"inb	%%dx,	%0	\n\t"
+				"mfence			\n\t"
+				:"=a"(ret)
+				:"d"(port)
+				:"memory");
+	return ret;
+}
+unsigned int io_in32(unsigned short port)
+{
+	unsigned int ret = 0;
+	__asm__ __volatile__(	"inl	%%dx,	%0	\n\t"
+				"mfence			\n\t"
+				:"=a"(ret)
+				:"d"(port)
+				:"memory");
+	return ret;
 }
 
-void SolveErrorInt(unsigned long rsp, unsigned long error_code)
-{
-	unsigned long * p = (unsigned long *)(rsp + 0x98);
-	if (error_code == 0)
-		printf("#DE divide_error(0), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 1)
-		printf("#DB debug_error(1), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 2)
-		printf("-- nmi_error(2), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 3)
-		printf("#BP INT3(3), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 4)
-		printf("#OF overflow(4), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 5)
-		printf("#BR bound_error(5), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 6)
-		printf("#UD undefine_code(6), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 7)
-		printf("#NM FPU_missing(7), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 8)
-		printf("#DF double_error(8), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 9)
-		printf("-- xiechuliqiyuejie(9), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if (error_code == 10)
-		printf("#TS invalid_TSS(10), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 11)
-		printf("#NP desc_missing(11), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 12)
-		printf("#SS SS_error(12), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 13)
-		printf("#GP general_protection(13), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 14)
-		printf("#PF page_error(14), RSP:%X 	RIP:%X\n", rsp, *p);
-	// else if(error_code == 15)	Intel 保留
-	// 	printf("#DB debug_error(15), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 16)
-		printf("#MF x87 FPU_error_compute_error(16), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 17)
-		printf("#AC alignment_check(17), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 18)
-		printf("#MC machine_check(18), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 19)
-		printf("#XM SIMD_exception(19), RSP:%X 	RIP:%X\n", rsp, *p);
-	else if(error_code == 20)
-		printf("#VE virtualization_exception(20), RSP:%X 	RIP:%X\n", rsp, *p);
-	else
-		printf("unknown error, RSP:%X 	RIP:%X\n", rsp, *p);
-	while(1);
-}
+// void IRQ0x20_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x20interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x20,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
 
-void set_tss64(unsigned long rsp0,unsigned long rsp1,unsigned long rsp2,unsigned long ist1,unsigned long ist2,unsigned long ist3,
-unsigned long ist4,unsigned long ist5,unsigned long ist6,unsigned long ist7)
-{
-	load_TR(8);
-	*(unsigned long *)(TSS64_Table+1) = rsp0;
-	*(unsigned long *)(TSS64_Table+3) = rsp1;
-	*(unsigned long *)(TSS64_Table+5) = rsp2;
-
-	*(unsigned long *)(TSS64_Table+9) = ist1;
-	*(unsigned long *)(TSS64_Table+11) = ist2;
-	*(unsigned long *)(TSS64_Table+13) = ist3;
-	*(unsigned long *)(TSS64_Table+15) = ist4;
-	*(unsigned long *)(TSS64_Table+17) = ist5;
-	*(unsigned long *)(TSS64_Table+19) = ist6;
-	*(unsigned long *)(TSS64_Table+21) = ist7;	
-}
-
-void do_invalid_TSS(uint64 rsp, uint64 error_code)
-{
-	uint64 *p = (uint64 *)(rsp + 0x98);
-
-	printf_color(BLACK, RED, "do_invalid_TSS(10),ERROR_CODE:%X,RSP:%X,RIP:%X\n",error_code , rsp , *p);
-
-	if(error_code & 0x01)
-		printf_color(BLACK, RED, "The exception occurred during \
-			delivery of an event external to the program,\
-			such as an interrupt or an earlier exception.\n");
-
-	if(error_code & 0x02)
-		printf_color(BLACK, RED, "Refers to a gate descriptor in the IDT;\n");
-	else
-		printf_color(BLACK, RED, "Refers to a descriptor in the GDT or the current LDT;\n");
-
-	if((error_code & 0x02) == 0)
-		if(error_code & 0x04)
-			printf_color(BLACK, RED, "Refers to a segment or gate descriptor in the LDT;\n");
-		else
-			printf_color(BLACK, RED, "Refers to a descriptor in the current GDT;\n");
-
-	printf_color(BLACK, RED, "Segment Selector Index:%#010x\n",error_code & 0xfff8);
-
-	while(1);
-}
-
-void do_page_fault(uint64 rsp,uint64 error_code)
-{
-	unsigned long * p = 0;
-	unsigned long cr2 = 0;
-
-	__asm__	__volatile__("movq	%%cr2,	%0":"=r"(cr2)::"memory");
-
-	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_page_fault(14),ERROR_CODE: %X,RSP: %X,RIP: %X\n",error_code , rsp , *p);
-
-	if(!(error_code & 0x01))
-		printf_color(BLACK, RED, "Page Not-Present,\t");
-
-	if(error_code & 0x02)
-		printf_color(BLACK, RED, "Write Cause Fault,\t");
-	else
-		printf_color(BLACK, RED, "Read Cause Fault,\t");
-
-	if(error_code & 0x04)
-		printf_color(BLACK, RED, "Fault in user(3)\t");
-	else
-		printf_color(BLACK, RED, "Fault in supervisor(0,1,2)\t");
-
-	if(error_code & 0x08)
-		printf_color(BLACK, RED, ",Reserved Bit Cause Fault\t");
-
-	if(error_code & 0x10)
-		printf_color(BLACK, RED, ",Instruction fetch Cause Fault");
-
-	printf_color(BLACK, RED, "\n");
-
-	printf_color(BLACK, RED, "CR2: %X\n",cr2);
-
-	while(1);
-}
-
-void do_nmi(unsigned long rsp,unsigned long error_code)
-{
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_nmi(2),ERROR_CODE:%X,RSP:%X,RIP:%X\n",error_code , rsp , *p);
-	while(1);
-}
-
-void do_double_fault(unsigned long rsp,unsigned long error_code)
-{
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_double_fault(8),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
-	while(1);
-}
-
-void do_coprocessor_segment_overrun(unsigned long rsp,unsigned long error_code)
-{
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_coprocessor_segment_overrun(9),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
-	while(1);
-}
-
-void do_segment_not_present(unsigned long rsp,unsigned long error_code)
-{
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_segment_not_present(11),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
-
-	if(error_code & 0x01)
-		printf_color(BLACK, RED, "The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
-
-	if(error_code & 0x02)
-		printf_color(BLACK, RED, "Refers to a gate descriptor in the IDT;\n");
-	else
-		printf_color(BLACK, RED, "Refers to a descriptor in the GDT or the current LDT;\n");
-
-	if((error_code & 0x02) == 0)
-		if(error_code & 0x04)
-			printf_color(BLACK, RED, "Refers to a segment or gate descriptor in the LDT;\n");
-		else
-			printf_color(BLACK, RED, "Refers to a descriptor in the current GDT;\n");
-
-	printf_color(BLACK, RED, "Segment Selector Index:%#010x\n",error_code & 0xfff8);
-
-	while(1);
-}
-
-void do_general_protection(unsigned long rsp,unsigned long error_code)
-{
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_general_protection(13),ERROR_CODE:%X,RSP:%X,RIP:%X\n",error_code , rsp , *p);
-
-	if(error_code & 0x01)
-		printf_color(BLACK, RED, "The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
-
-	if(error_code & 0x02)
-		printf_color(BLACK, RED, "Refers to a gate descriptor in the IDT;\n");
-	else
-		printf_color(BLACK, RED, "Refers to a descriptor in the GDT or the current LDT;\n");
-
-	if((error_code & 0x02) == 0)
-		if(error_code & 0x04)
-			printf_color(BLACK, RED, "Refers to a segment or gate descriptor in the LDT;\n");
-		else
-			printf_color(BLACK, RED, "Refers to a descriptor in the current GDT;\n");
-
-	printf_color(BLACK, RED, "Segment Selector Index:%#010x\n",error_code & 0xfff8);
-
-	while(1);
-}
+// void IRQ0x21_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x21interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x21,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x22_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x22interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x22,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x23_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x23interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x23,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x24_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x24interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x24,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x25_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x25interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x25,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x26_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x26interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x26,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x27_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x27interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x27,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x28_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x28interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x28,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x29_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x29interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x29,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x2a_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x2ainterrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x2a,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x2b_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x2binterrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x2b,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x2c_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x2cinterrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x2c,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x2d_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x2dinterrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x2d,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x2e_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x2einterrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x2e,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x2f_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x2finterrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x2f,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x30_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x30interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x30,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x31_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x31interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x31,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x32_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x32interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x32,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x33_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x33interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x33,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x34_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x34interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x34,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x35_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x35interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x35,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x36_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x36interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x36,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }
+// void IRQ0x37_interrupt()
+// {
+// 	__asm__ (	"IRQ_0x37interrupt:		\n\t"	\
+// 				"pushq	$0x00				\n\t"	\
+// 				SAVE_ALL					\
+// 				"movq	%rsp,	%rdi			\n\t"	\
+// 				"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
+// 				"pushq	%rax				\n\t"	\
+// 				"movq	$0x37,	%rsi			\n\t"	\
+// 				"jmp	do_IRQ	\n\t");
+// }

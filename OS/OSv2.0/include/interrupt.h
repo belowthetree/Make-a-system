@@ -1,100 +1,77 @@
-#include "type.h"
-#ifndef	_DESC_H
-#define	_DESC_H
+#ifndef _INTERRUPT_H
+#define _INTERRUPT_H
 
-#define _set_gate(gate_selector_addr,attr,ist,code_addr)	\
-do								\
-{	unsigned long __d0,__d1;				\
-	__asm__ __volatile__	(	"movw	%%dx,	%%ax	\n\t"	\
-					"andq	$0x7,	%%rcx	\n\t"	\
-					"addl	%4,	%%ecx	\n\t"	\
-					"shlq	$32,	%%rcx	\n\t"	\
-					"addq	%%rcx,	%%rax	\n\t"	\
-					"xorq	%%rcx,	%%rcx	\n\t"	\
-					"movl	%%edx,	%%ecx	\n\t"	\
-					"shrq	$16,	%%rcx	\n\t"	\
-					"shlq	$48,	%%rcx	\n\t"	\
-					"addq	%%rcx,	%%rax	\n\t"	\
-					"movq	%%rax,	%0	\n\t"	\
-					"shrq	$32,	%%rdx	\n\t"	\
-					"movq	%%rdx,	%1	\n\t"	\
-					:"=m"(*((unsigned long *)(gate_selector_addr)))	,					\
-					 "=m"(*(1 + (unsigned long *)(gate_selector_addr))),"=&a"(__d0),"=&d"(__d1)		\
-					:"i"(attr << 8),									\
-					 "3"((unsigned long *)(code_addr)),"2"(0x8 << 16),"c"(ist)				\
-					:"memory"		\
-				);				\
-}while(0)
-
-#define load_TR(n) 							\
-do{									\
-	__asm__ __volatile__(	"ltr	%%ax"				\
-				:					\
-				:"a"(n << 3)				\
-				:"memory");				\
-}while(0)
-
-struct desc_struct 
-{
-	unsigned char x[8];
-};
-
-struct gate_struct
-{
-	unsigned char x[16];
-};
-
-extern struct desc_struct GDT_Table[];
-extern struct gate_struct IDT_Table[];
-extern unsigned int TSS64_Table[26];
-// 门初始化
-void set_intr_gate(uint32 n, uint8 ist, void * addr);
-void set_trap_gate(uint32 n, uint8 ist, void * addr);
-void set_system_gate(uint32 n, uint8 ist, void * addr);
-
-// 写入门
-void set_gate(uint8 * addr, uint8 attr, uint8 ist, void * func);
-// 系统级中断向量初始化
-void sys_vector_init();
-// TSS初始化
-void set_tss64(unsigned long rsp0,unsigned long rsp1,unsigned long rsp2,unsigned long ist1,unsigned long ist2,unsigned long ist3,
-unsigned long ist4,unsigned long ist5,unsigned long ist6,unsigned long ist7);
-
-// 中断中转函数
-void SolveErrorInt(unsigned long rsp, unsigned long error_code);
+#define sti() 		__asm__ __volatile__ ("sti	\n\t":::"memory")
+#define SAVE_ALL				\
+	"cld;			\n\t"		\
+	"pushq	%rax;		\n\t"		\
+	"movq	%es,	%rax;	\n\t"		\
+	"pushq	%rax;		\n\t"		\
+	"movq	%ds,	%rax;	\n\t"		\
+	"pushq	%rax;		\n\t"		\
+	"xorq	%rax,	%rax;	\n\t"		\
+	"pushq	%rbp;		\n\t"		\
+	"pushq	%rdi;		\n\t"		\
+	"pushq	%rsi;		\n\t"		\
+	"pushq	%rdx;		\n\t"		\
+	"pushq	%rcx;		\n\t"		\
+	"pushq	%rbx;		\n\t"		\
+	"pushq	%r8;		\n\t"		\
+	"pushq	%r9;		\n\t"		\
+	"pushq	%r10;		\n\t"		\
+	"pushq	%r11;		\n\t"		\
+	"pushq	%r12;		\n\t"		\
+	"pushq	%r13;		\n\t"		\
+	"pushq	%r14;		\n\t"		\
+	"pushq	%r15;		\n\t"		\
+	"movq	$0x10,	%rdx;	\n\t"		\
+	"movq	%rdx,	%ds;	\n\t"		\
+	"movq	%rdx,	%es;	\n\t"
 
 
-void do_invalid_TSS(uint64 rsp, uint64 error_code);
-void do_nmi(unsigned long rsp,unsigned long error_code);
-void do_double_fault(unsigned long rsp,unsigned long error_code);
-void do_segment_not_present(unsigned long rsp,unsigned long error_code);
-void do_coprocessor_segment_overrun(unsigned long rsp,unsigned long error_code);
-void do_general_protection(unsigned long rsp,unsigned long error_code);
+void IRQ0x20_interrupt();
+void IRQ0x21_interrupt();
+void IRQ0x22_interrupt();
+void IRQ0x23_interrupt();
+void IRQ0x24_interrupt();
+void IRQ0x25_interrupt();
+void IRQ0x26_interrupt();
+void IRQ0x27_interrupt();
+void IRQ0x28_interrupt();
+void IRQ0x29_interrupt();
+void IRQ0x2a_interrupt();
+void IRQ0x2b_interrupt();
+void IRQ0x2c_interrupt();
+void IRQ0x2d_interrupt();
+void IRQ0x2e_interrupt();
+void IRQ0x2f_interrupt();
+void IRQ0x30_interrupt();
+void IRQ0x31_interrupt();
+void IRQ0x32_interrupt();
+void IRQ0x33_interrupt();
+void IRQ0x34_interrupt();
+void IRQ0x35_interrupt();
+void IRQ0x36_interrupt();
+void IRQ0x37_interrupt();
+void IRQ0x38_interrupt();
+void IRQ0x39_interrupt();
+void IRQ0x3a_interrupt();
+void IRQ0x3b_interrupt();
+void IRQ0x3c_interrupt();
+void IRQ0x3d_interrupt();
+void IRQ0x3e_interrupt();
+void IRQ0x3f_interrupt();
 
+void (* interrupt[24])(void);
 
-// 错误入口函数
-void divide_error();
-void machine_check();
-void debug();
-void nmi();
-void int3();
-void overflow();
-void bounds();
-void undefined_opcode();
-void dev_not_available();
-void double_fault();
-void coprocessor_segment_overrun();
-void invalid_TSS();
-void segment_not_present();
-void stack_segment_fault();
-void page_fault();
-void x87_FPU_error();
-void alignment_check();
-void machine_check();
-void SIMD_exception();
-void virtualization_exception();
-void general_protection();
+void init_interrupt();
+void do_IRQ(unsigned long regs, unsigned long nr);
 
+void io_out8(unsigned short port,unsigned char value);
+void io_out32(unsigned short port,unsigned int value);
+
+unsigned char io_in8(unsigned short port);
+unsigned int io_in32(unsigned short port);
 
 
 #endif

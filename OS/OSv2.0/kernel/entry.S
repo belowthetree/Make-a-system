@@ -26,26 +26,26 @@ OLDRSP	=	0xb0
 OLDSS	=	0xb8
 
 RESTORE_ALL:
-	popq	%r15;		
-	popq	%r14;		
-	popq	%r13;		
-	popq	%r12;		
-	popq	%r11;		
-	popq	%r10;		
-	popq	%r9;		
-	popq	%r8;		
-	popq	%rbx;		
-	popq	%rcx;		
-	popq	%rdx;		
+	popq	%r15;
+	popq	%r14;
+	popq	%r13;
+	popq	%r12;
+	popq	%r11;
+	popq	%r10;
+	popq	%r9;
+	popq	%r8;
+	popq	%rbx;
+	popq	%rcx;
+	popq	%rdx;
 	popq	%rsi;		
-	popq	%rdi;		
-	popq	%rbp;		
-	popq	%rax;		
-	movq	%rax,	%ds;	
-	popq	%rax;		
-	movq	%rax,	%es;	
-	popq	%rax;		
-	addq	$0x10,	%rsp;	
+	popq	%rdi;
+	popq	%rbp;
+	popq	%rax;
+	movq	%rax,	%ds;
+	popq	%rax;
+	movq	%rax,	%es;
+	popq	%rax;
+	addq	$0x10,	%rsp;
 	iretq;
 
 #define GET_CURRENT(reg)	\
@@ -261,4 +261,217 @@ ENTRY(virtualization_exception)
 	xchgq	%rax,	(%rsp)
 	jmp	error_code
 
+int_code:
+	pushq	%rax
+	movq	%es,	%rax
+	pushq	%rax
+	movq	%ds,	%rax
+	pushq	%rax
+	xorq	%rax,	%rax
 
+	pushq	%rbp
+	pushq	%rdi
+	pushq	%rsi
+	pushq	%rdx
+	pushq	%rcx
+	pushq	%rbx
+	pushq	%r8
+	pushq	%r9
+	pushq	%r10
+	pushq	%r11
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15	
+	
+	cld
+	movq	ERRCODE(%rsp),	%rsi
+	movq	FUNC(%rsp),	%rdx
+
+	movq	$0x10,	%rdi
+	movq	%rdi,	%ds
+	movq	%rdi,	%es
+
+	movq	%rsp,	%rdi
+	////GET_CURRENT(%ebx)
+
+	callq 	*%rdx
+
+	jmp	ret_from_exception
+
+ENTRY(IRQ0x20_interrupt)
+	pushq	$0x20
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+
+ENTRY(IRQ0x21_interrupt)
+	pushq	$0x21
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x22_interrupt)
+	pushq	$0x22
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x23_interrupt)
+	pushq	$0x23
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x24_interrupt)
+	pushq	$0x24
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x25_interrupt)
+	pushq	$0x25
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x26_interrupt)
+	pushq	$0x26
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x27_interrupt)
+	pushq	$0x27
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x28_interrupt)
+	pushq	$0x28
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x29_interrupt)
+	pushq	$0x29
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x2a_interrupt)
+	pushq	$0x2a
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x2b_interrupt)
+	pushq	$0x2b
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x2c_interrupt)
+	pushq	$0x2c
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x2d_interrupt)
+	pushq	$0x2d
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x2e_interrupt)
+	pushq	$0x2e
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x2f_interrupt)
+	pushq	$0x2f
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x30_interrupt)
+	pushq	$0x30
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x31_interrupt)
+	pushq	$0x31
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x32_interrupt)
+	pushq	$0x32
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x33_interrupt)
+	pushq	$0x33
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x34_interrupt)
+	pushq	$0x34
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x35_interrupt)
+	pushq	$0x35
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+	
+ENTRY(IRQ0x36_interrupt)
+	pushq	$0x36
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+
+ENTRY(IRQ0x37_interrupt)
+	pushq	$0x37
+	pushq	%rax
+	leaq	do_IRQ(%rip),	%rax
+	xchgq	%rax,	(%rsp)
+	jmp	int_code
+
+//IRQ0x20_interrupt:
+//	pushq	$0x00
+//	SAVE_ALL
+//	movq	%rsp,	%rdi
+//	leaq	ret_from_intr(%rip),	%rax
+//	pushq	%rax
+//	movq	$nr,	%rsi
+//	jmp	do_IRQ

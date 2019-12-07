@@ -448,6 +448,6 @@ void putux(unsigned long n, int isuper, int align, int zero)
 void memset(unsigned char *str, unsigned char c, long size)
 {
     long i = 0;
-    while(i++<size)
-        *(str + i) = c;
+    while(i<size)
+        *(str + i++) = c;
 }

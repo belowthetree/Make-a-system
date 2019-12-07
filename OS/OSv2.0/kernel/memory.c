@@ -21,10 +21,6 @@ do								\
 				);				\
 }while(0)
 
-void get_memory_info()
-{
-}
-
 void init_memory()
 {
 	memory_management_struct.start_code = (uint64) & _text;
@@ -128,7 +124,7 @@ void init_memory()
 		end   = ((memory_management_struct.e820[i].address + memory_management_struct.e820[i].length) >> PAGE_2M_SHIFT) << PAGE_2M_SHIFT;
 		if(end <= start)
 			continue;
-		
+
 		//zone init
 		z = memory_management_struct.zones_struct + 
 			memory_management_struct.zones_size++;
@@ -147,7 +143,6 @@ void init_memory()
 		// 对应全局内存结构中的页面数组的局部
 		z->pages_length = (end - start) >> PAGE_2M_SHIFT;
 		z->pages_group =  (struct Page *)(memory_management_struct.pages_struct + (start >> PAGE_2M_SHIFT));
-
 		//page init
 		p = z->pages_group;
 		for(j = 0;j < z->pages_length; j++ , p++)
@@ -212,7 +207,7 @@ void init_memory()
 	printf_color(BLACK, INDIGO, "Global_CR3\t:%018X\n",Global_CR3);
 	printf_color(BLACK, INDIGO, "*Global_CR3\t:%018X\n",*Phy_To_Virt(Global_CR3) & (~0xff));
 	printf_color(BLACK, INDIGO, "**Global_CR3\t:%018X\n",*Phy_To_Virt(*Phy_To_Virt(Global_CR3) & (~0xff)) & (~0xff));
-	// 清楚页表，作者说法是不需要保留一致性页表映射，可能是为了避免访问内核？或者重新分配
+	// 清除页表，作者说法是不需要保留一致性页表映射，可能是为了避免访问内核？或者重新分配
 	for(i = 0;i < 10;i++)
 		*(Phy_To_Virt(Global_CR3)  + i) = 0UL;
 	
@@ -254,4 +249,90 @@ unsigned long * Get_gdt()
 					:"memory"
 				);
 	return tmp;
+}
+
+/*
+	number: number < 64
+	zone_select: zone select from dma , mapped in  pagetable , unmapped in pagetable
+	page_flags: struct Page flages
+*/
+struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags)
+{
+	int i;
+	unsigned long page = 0;
+
+	int zone_start = 0;
+	int zone_end = 0;
+	// 根据类型选择不同区域，不过目前没分类，都一样
+	switch(zone_select)
+	{
+		case ZONE_DMA:
+				zone_start = 0;
+				zone_end = ZONE_DMA_INDEX;
+			break;
+
+		case ZONE_NORMAL:
+				zone_start = ZONE_DMA_INDEX;
+				zone_end = ZONE_NORMAL_INDEX;
+			break;
+
+		case ZONE_UNMAPED:
+				zone_start = ZONE_UNMAPED_INDEX;
+				zone_end = memory_management_struct.zones_size - 1;
+			break;
+
+		default:
+			printf_color(BLACK, RED, "alloc_pages error zone_select index\n");
+			return NULL;
+			break;
+	}
+
+	// 从选定区域开始寻找
+	for(i = zone_start;i <= zone_end; i++)
+	{
+		struct Zone * z;
+		unsigned long j;
+		unsigned long start,end,length;
+		unsigned long tmp;
+		// 当前区域空闲页数少于需要的页，则跳过
+		if((memory_management_struct.zones_struct + i)->page_free_count < number)
+			continue;
+		// start、end 分别为开始、结束的页表
+		z = memory_management_struct.zones_struct + i;
+		start = z->zone_start_address >> PAGE_2M_SHIFT;
+		end = z->zone_end_address >> PAGE_2M_SHIFT;
+		length = z->zone_length >> PAGE_2M_SHIFT;
+
+		tmp = 64 - start % 64;
+		// 这里先将 j 补齐到对齐 64 位
+		for(j = start;j <= end;j += j % 64 ? tmp : 64)
+		{	// 得到第 j 个页表空闲情况位图地址
+			unsigned long * p = memory_management_struct.bits_map + (j >> 6);
+			unsigned long shift = j % 64;
+			unsigned long k;
+			for(k = shift;k < 64 - shift;k++)
+			{	// 判断是否有从 p 开始的 number 个页表可以使用
+				if( !(((*p >> k) | (*(p + 1) << (64 - k))) & 
+					(number == 64 ? 0xffffffffffffffffUL : ((1UL << number) - 1))))
+				{
+					unsigned long	l;
+					// 可能要改
+					page = j / 64 * 64 + k;
+					for(l = 0;l < number;l++)
+					{
+						struct Page * x = memory_management_struct.pages_struct + page + l;
+						page_init(x,page_flags);
+					}
+					goto find_free_pages;
+				}
+			}
+		
+		}
+	}
+
+	return NULL;
+
+find_free_pages:
+
+	return (struct Page *)(memory_management_struct.pages_struct + page);
 }
