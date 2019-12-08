@@ -8,6 +8,10 @@
 #define uint64	unsigned long
 #define BASE	0xffff800000000000
 
-
+// 
+typedef struct 
+{
+	unsigned long pml4t;
+} pml4t_t;
 
 #endif
