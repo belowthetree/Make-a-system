@@ -9,6 +9,7 @@ void Start_Kernel(void)
 {
     InitGraph((uint32 *)0xffff800000a00000);
     sys_vector_init();
+	load_TR(8);
     set_tss64(0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
      0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
      0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
@@ -20,6 +21,7 @@ void Start_Kernel(void)
     printf_color(BLACK, RED, "Fuck\n\t%s%d", msg, -123);
 
     init_interrupt();
+    init_process();
 
  //    printf_color(BLACK, RED, "memory_management_struct.bits_map:%018X\n",*memory_management_struct.bits_map);
 	// printf_color(BLACK, RED, "memory_management_struct.bits_map:%018X\n",*(memory_management_struct.bits_map + 1));

@@ -107,7 +107,6 @@ void SolveErrorInt(unsigned long rsp, unsigned long error_code)
 void set_tss64(unsigned long rsp0,unsigned long rsp1,unsigned long rsp2,unsigned long ist1,unsigned long ist2,unsigned long ist3,
 unsigned long ist4,unsigned long ist5,unsigned long ist6,unsigned long ist7)
 {
-	load_TR(8);
 	*(unsigned long *)(TSS64_Table+1) = rsp0;
 	*(unsigned long *)(TSS64_Table+3) = rsp1;
 	*(unsigned long *)(TSS64_Table+5) = rsp2;

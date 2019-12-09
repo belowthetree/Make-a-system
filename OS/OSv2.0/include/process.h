@@ -40,14 +40,14 @@ extern char _ebss;
 extern char _end;
 
 extern unsigned long _stack_start;
-
+// 进程信息
 typedef struct task_struct{
 	struct List list;				// 双向链表，连接各个 PCB
 	volatile long state;			// 进程状态：运行、停止、可中断
 	unsigned long flags;			// 进程标志：进程、线程、内核线程
 
 	struct mm_struct *mm;			// 内存空间分布结构体，记录内存页表和程序段信息
-	struct thread_struct *thread;	// 进程切换时博爱刘的状态信息
+	struct thread_struct *thread;	// 进程切换时保留的状态信息
 
 	unsigned long addr_limit;		// 进程地址空间范围
 							/*0x0000,0000,0000,0000 - 0x0000,7fff,ffff,ffff user*/
@@ -57,7 +57,7 @@ typedef struct task_struct{
 	long signal;					// 进程持有的信号
 	long priority;					// 进程优先级
 }PCB;
-// 内存信息
+// 内存信息，放在 PCB 中
 struct mm_struct{
 	pml4t_t *pgd;	// 页表指针
 
@@ -67,7 +67,7 @@ struct mm_struct{
 	unsigned long start_brk, end_brk;		// 动态内存分配区
 	unsigned long start_stack;				// 应用层栈基地址
 };
-// 保存进程现场，似乎并不保存通用寄存器
+// 保存进程现场，放在 PCB 中，似乎并不保存通用寄存器
 struct thread_struct{
 	unsigned long rsp0;			// 内核层栈基地址
 
@@ -87,12 +87,12 @@ union task_union{
 	unsigned long stack[STACK_SIZE / sizeof(unsigned long)];
 }__attribute__((aligned(8)));
 
-// 链接到 data.init_task 段内
+// 内核栈区域，32KB 链接到 data.init_task 段内
 union task_union init_task_union __attribute__((__section__ (".data.init_task")));
 // = {INIT_TASK(init_task_union.task)};
 // 支持 8 个进程，第一个进程为 init_task_union
 struct task_struct *init_task[NR_CPUS] = {&init_task_union.task,0};
-
+// 内存信息
 struct mm_struct init_mm = {0};
 // 初始进程
 struct thread_struct init_thread = 
@@ -202,7 +202,6 @@ do{							\
 				);			\
 }while(0)
 
-extern void kernel_thread_func(void);
 void __switch_to(struct task_struct *prev,struct task_struct *next);
 
 #define current get_current()

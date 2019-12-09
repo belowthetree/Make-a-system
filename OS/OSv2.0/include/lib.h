@@ -18,6 +18,7 @@ void wrmsr(unsigned long address,unsigned long value);
 void list_init(struct List * list);
 struct List * list_next(struct List * entry);
 
+void * memcpy(void *From,void * To,long Num);
 
 
 

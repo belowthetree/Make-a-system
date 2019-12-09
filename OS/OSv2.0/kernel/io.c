@@ -445,9 +445,10 @@ void putux(unsigned long n, int isuper, int align, int zero)
     putux_color(n, BLACK, WHITE, isuper, align, zero);
 }
 
-void memset(unsigned char *str, unsigned char c, long size)
+void memset(void *str, unsigned char c, long size)
 {
+    unsigned char * s = (unsigned char *)str;
     long i = 0;
     while(i<size)
-        *(str + i++) = c;
+        *(s + i++) = c;
 }

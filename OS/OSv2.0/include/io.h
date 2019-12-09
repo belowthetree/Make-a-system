@@ -22,7 +22,7 @@ void putul_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int align,
 void putux(unsigned long n, int isuper, int align, int zero);
 void putux_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero);
 
-void memset(unsigned char *str, unsigned char c, long size);
+void memset(void *str, unsigned char c, long size);
 
 
 #endif
