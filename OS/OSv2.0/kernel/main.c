@@ -9,7 +9,7 @@ void Start_Kernel(void)
 {
     InitGraph((uint32 *)0xffff800000a00000);
     sys_vector_init();
-	load_TR(8);
+	load_TR(10);
     set_tss64(0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
      0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
      0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 

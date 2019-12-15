@@ -49,6 +49,7 @@ void printf_color(uint32 BackColor, uint32 ForeColor, char *str, ...)
 
     while(*str)
     {
+        asm volatile("st:");
         if (*str == '%')
         {
             str++;

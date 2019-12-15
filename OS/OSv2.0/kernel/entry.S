@@ -143,14 +143,14 @@ ENTRY(nmi)
 	movq	$0,	%rsi
 	movq	%rsp,	%rdi
 
-	callq	SolveErrorInt
+	callq	do_nmi
 
 	jmp	RESTORE_ALL
 
 ENTRY(int3)
 	pushq	$3
 	pushq	%rax
-	leaq	do_nmi(%rip),	%rax
+	leaq	SolveErrorInt(%rip),	%rax
 	xchgq	%rax,	(%rsp)
 	jmp	error_code
 
@@ -222,7 +222,6 @@ ENTRY(general_protection)
 
 ENTRY(page_fault)
 	pushq	%rax
-	jmp	page_fault
 	leaq	do_page_fault(%rip),	%rax
 	xchgq	%rax,	(%rsp)
 	jmp	error_code
@@ -261,7 +260,39 @@ ENTRY(virtualization_exception)
 	xchgq	%rax,	(%rsp)
 	jmp	error_code
 
-ENTRY(ret_system_call)						
+ENTRY(system_call)
+	sti
+	subq	$0x38,	%rsp			 
+	cld;					 
+
+	pushq	%rax;				 	
+	movq	%es,	%rax;			 	
+	pushq	%rax;				 	
+	movq	%ds,	%rax;			 	
+	pushq	%rax;				 	
+	xorq	%rax,	%rax;			 	
+	pushq	%rbp;				 	
+	pushq	%rdi;				 	
+	pushq	%rsi;				 	
+	pushq	%rdx;				 	
+	pushq	%rcx;				 
+	pushq	%rbx;				 	
+	pushq	%r8;				 	
+	pushq	%r9;				 	
+	pushq	%r10;				 
+	pushq	%r11;				 
+	pushq	%r12;				 	
+	pushq	%r13;				 
+	pushq	%r14;				 	
+	pushq	%r15;				 	
+	movq	$0x10,	%rdx;			 	
+	movq	%rdx,	%ds;			 	
+	movq	%rdx,	%es;			 
+	movq	%rsp,	%rdi			 	
+			
+	callq	system_call_function
+
+ENTRY(ret_system_call)			
 	movq	%rax,	0x80(%rsp)		 
 	popq	%r15				 
 	popq	%r14				 	
@@ -281,10 +312,10 @@ ENTRY(ret_system_call)
 	movq	%rax,	%ds			 
 	popq	%rax				 
 	movq	%rax,	%es			 
-	popq	%rax				 
-	addq	$0x38,	%rsp	
-	.byte	0x48		 
-	sysexit					 
+	popq	%rax		 
+	addq	$0x38,	%rsp
+	.byte	0x48
+	sysexit
 
 int_code:
 	pushq	%rax
@@ -491,12 +522,3 @@ ENTRY(IRQ0x37_interrupt)
 	leaq	do_IRQ(%rip),	%rax
 	xchgq	%rax,	(%rsp)
 	jmp	int_code
-
-//IRQ0x20_interrupt:
-//	pushq	$0x00
-//	SAVE_ALL
-//	movq	%rsp,	%rdi
-//	leaq	ret_from_intr(%rip),	%rax
-//	pushq	%rax
-//	movq	$nr,	%rsi
-//	jmp	do_IRQ

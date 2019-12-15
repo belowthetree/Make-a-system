@@ -1,11 +1,11 @@
 #ifndef _LIB_H
 #define _LIB_H
 
-#define container_of(ptr,type,member)							\
-({											\
-	typeof(((type *)0)->member) * p = (ptr);					\
-	(type *)((unsigned long)p - (unsigned long)&(((type *)0)->member));		\
-})
+#define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE*)0)->MEMBER)
+
+#define container_of(ptr, type, member) ({          \
+        const typeof( ((type *)0)->member ) *__mptr = (const typeof( ((type *)0)->member ) *)(ptr); \
+        (type *)( (char *)__mptr - offsetof(type,member) );})
 
 // 用于链接各个 PCB
 struct List

@@ -182,7 +182,7 @@ unsigned long do_fork(
 void init_process();
 
 struct task_struct * get_current();
-
+// 保存前一个进程的 rsp, rip 下一个进程的 rip 压栈使其在__switch_to执行ret时跳转
 #define switch_to(prev,next)			\
 do{							\
 	__asm__ __volatile__ (	"pushq	%%rbp	\n\t"	\
@@ -203,9 +203,24 @@ do{							\
 }while(0)
 
 void __switch_to(struct task_struct *prev,struct task_struct *next);
+unsigned long do_execve(struct pt_regs * regs);
+unsigned long  system_call_function(struct pt_regs * regs);
 
 #define current get_current()
+// 最大调用号 128
+#define MAX_SYSTEM_CALL_NR 128
 
+typedef unsigned long (* system_call_t)(struct pt_regs * regs);
+
+unsigned long no_system_call(struct pt_regs * regs);
+unsigned long sys_printf(struct pt_regs * regs);
+
+system_call_t system_call_table[MAX_SYSTEM_CALL_NR] = 
+{
+	[0] = no_system_call,
+	[1] = sys_printf,
+	[2 ... MAX_SYSTEM_CALL_NR-1] = no_system_call
+};
 
 
 

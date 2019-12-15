@@ -42,7 +42,7 @@ entry64:
 	movq	%rax,	%es
 	movq	%rax,	%gs
 	movq	%rax,	%ss
-	movq	$0xffff800000007E00,	%rsp		/* rsp address */
+	movq	_stack_start(%rip),	%rsp		/* rsp address */
 //	初始化中断表，因为内核初期比较脆弱，进行临时处理
 setup_IDT:
 //	中断地址
@@ -84,9 +84,9 @@ setup_TSS64:
 	addq	%rcx,	%rax
 	addq	$103,	%rax
 	leaq	GDT_Table(%rip),	%rdi
-	movq	%rax,	64(%rdi)
+	movq	%rax,	80(%rdi)
 	shrq	$32,	%rdx
-	movq	%rdx,	72(%rdi)
+	movq	%rdx,	88(%rdi)
 
 //	mov	$0x40,	%ax
 //	ltr	%ax
@@ -181,24 +181,24 @@ __PML4E://  页目录 一共 4kb 大小 47 ~ 39位
 
 .org	0x2000
 __PDPTE://  页表紧接着页目录 4kb 大小 38 ~ 30位
-	.quad	0x103003    // 允许读写
+	.quad	0x103007    // 允许读写
 	.fill	511,8,0
 
 .org	0x3000
 __PDE:  //  83 表示 P 置 1 无下级页表，特权级，可写可读 29 ~ 21位
-	.quad	0x000083	
-	.quad	0x200083
-	.quad	0x400083
-	.quad	0x600083
-	.quad	0x800083
-	.quad	0xe0000083		/*0x a00000*/
-	.quad	0xe0200083
-	.quad	0xe0400083
-	.quad	0xe0600083
-	.quad	0xe0800083		/*0x1000000*/
-	.quad	0xe0a00083
-	.quad	0xe0c00083
-	.quad	0xe0e00083
+	.quad	0x000087	
+	.quad	0x200087
+	.quad	0x400087
+	.quad	0x600087
+	.quad	0x800087		/* 0x800083 */
+	.quad	0xe0000087		/* 0xa00000 */
+	.quad	0xe0200087
+	.quad	0xe0400087
+	.quad	0xe0600087
+	.quad	0xe0800087		/*0x1000000*/
+	.quad	0xe0a00087
+	.quad	0xe0c00087
+	.quad	0xe0e00087
 	.fill	499,8,0
 
 
@@ -207,14 +207,16 @@ __PDE:  //  83 表示 P 置 1 无下级页表，特权级，可写可读 29 ~ 21
 .global     GDT_Table
 
 GDT_Table:
-    .quad	0x0000000000000000			/*0	NULL descriptor		       	00*/
+	.quad	0x0000000000000000			/*0	NULL descriptor		       	00*/
 	.quad	0x0020980000000000			/*1	KERNEL	Code	64-bit	Segment	08*/
 	.quad	0x0000920000000000			/*2	KERNEL	Data	64-bit	Segment	10*/
-	.quad	0x0020f80000000000			/*3	USER	Code	64-bit	Segment	18*/
-	.quad	0x0000f20000000000			/*4	USER	Data	64-bit	Segment	20*/
-	.quad	0x00cf9a000000ffff			/*5	KERNEL	Code	32-bit	Segment	28*/
-	.quad	0x00cf92000000ffff			/*6	KERNEL	Data	32-bit	Segment	30*/
-	.fill	10,8,0					/*8 ~ 9	TSS (jmp one segment <7>) in long-mode 128-bit 40*/
+	.quad	0x0000000000000000			/*3	USER	Code	32-bit	Segment 18*/
+	.quad	0x0000000000000000			/*4	USER	Data	32-bit	Segment 20*/
+	.quad	0x0020f80000000000			/*5	USER	Code	64-bit	Segment	28*/
+	.quad	0x0000f20000000000			/*6	USER	Data	64-bit	Segment	30*/
+	.quad	0x00cf9a000000ffff			/*7	KERNEL	Code	32-bit	Segment	38*/
+	.quad	0x00cf92000000ffff			/*8	KERNEL	Data	32-bit	Segment	40*/
+	.fill	10,8,0					/*10 ~ 11 TSS (jmp one segment <9>) in long-mode 128-bit 50*/
 GDT_END:
 
 GDT_POINTER:

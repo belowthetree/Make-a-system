@@ -142,7 +142,7 @@ void do_invalid_TSS(uint64 rsp, uint64 error_code)
 		else
 			printf_color(BLACK, RED, "Refers to a descriptor in the current GDT;\n");
 
-	printf_color(BLACK, RED, "Segment Selector Index:%#010x\n",error_code & 0xfff8);
+	printf_color(BLACK, RED, "Segment Selector Index:%010X\n",error_code & 0xfff8);
 
 	while(1);
 }
@@ -195,7 +195,7 @@ void do_double_fault(unsigned long rsp,unsigned long error_code)
 {
 	unsigned long * p = NULL;
 	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_double_fault(8),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+	printf_color(BLACK, RED, "do_double_fault(8),ERROR_CODE:%018X,RSP:%018X,RIP:%018X\n",error_code , rsp , *p);
 	while(1);
 }
 
@@ -203,7 +203,7 @@ void do_coprocessor_segment_overrun(unsigned long rsp,unsigned long error_code)
 {
 	unsigned long * p = NULL;
 	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_coprocessor_segment_overrun(9),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+	printf_color(BLACK, RED, "do_coprocessor_segment_overrun(9),ERROR_CODE:%018X,RSP:%018X,RIP:%018X\n",error_code , rsp , *p);
 	while(1);
 }
 
@@ -211,7 +211,7 @@ void do_segment_not_present(unsigned long rsp,unsigned long error_code)
 {
 	unsigned long * p = NULL;
 	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_segment_not_present(11),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+	printf_color(BLACK, RED, "do_segment_not_present(11),ERROR_CODE:%018X,RSP:%018X,RIP:%018X\n",error_code , rsp , *p);
 
 	if(error_code & 0x01)
 		printf_color(BLACK, RED, "The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
@@ -227,7 +227,7 @@ void do_segment_not_present(unsigned long rsp,unsigned long error_code)
 		else
 			printf_color(BLACK, RED, "Refers to a descriptor in the current GDT;\n");
 
-	printf_color(BLACK, RED, "Segment Selector Index:%#010x\n",error_code & 0xfff8);
+	printf_color(BLACK, RED, "Segment Selector Index:%010X\n",error_code & 0xfff8);
 
 	while(1);
 }
@@ -252,7 +252,7 @@ void do_general_protection(unsigned long rsp,unsigned long error_code)
 		else
 			printf_color(BLACK, RED, "Refers to a descriptor in the current GDT;\n");
 
-	printf_color(BLACK, RED, "Segment Selector Index:%#010x\n",error_code & 0xfff8);
+	printf_color(BLACK, RED, "Segment Selector Index:%010X\n",error_code & 0xfff8);
 
 	while(1);
 }

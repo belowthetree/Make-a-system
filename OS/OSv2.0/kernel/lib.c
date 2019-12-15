@@ -1,6 +1,7 @@
 #include "lib.h"
 #include "type.h"
 
+// 将 EDX:EAX 里的值写入 ECX指示的 MSR 寄存器中
 void wrmsr(unsigned long address,unsigned long value)
 {
 	__asm__ __volatile__("wrmsr	\n\t"::"d"(value >> 32),"a"(value & 0xffffffff),"c"(address):"memory");	
