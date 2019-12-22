@@ -1,6 +1,6 @@
-#include "type.h"
 #ifndef	_ABNORMAL_H
 #define	_ABNORMAL_H
+#include "type.h"
 
 #define _set_gate(gate_selector_addr,attr,ist,code_addr)	\
 do								\

@@ -58,7 +58,7 @@ void SolveErrorInt(unsigned long rsp, unsigned long error_code)
 {
 	unsigned long * p = (unsigned long *)(rsp + 0x98);
 	if (error_code == 0)
-		printf("#DE divide_error(0), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#DE divide_error(0), RSP:%uX 	RIP:%uX\n", rsp, *p);
 	else if(error_code == 1)
 		printf("#DB debug_error(1), RSP:%X 	RIP:%X\n", rsp, *p);
 	else if(error_code == 2)

@@ -3,6 +3,11 @@
 #include "graph.h"
 #include "io.h"
 
+#define SIZEOF_LONG_ALIGN(size) ((size + sizeof(long) - 1) & ~(sizeof(long) - 1) )
+#define SIZEOF_INT_ALIGN(size) ((size + sizeof(int) - 1) & ~(sizeof(int) - 1) )
+
+struct Slab_cache kmalloc_cache_size[16];
+
 extern char _text;
 extern char _etext;
 extern char _edata;
@@ -29,8 +34,8 @@ void init_memory()
 	memory_management_struct.end_brk 	= (uint64) & _end;
 
 	int i,j;
-	unsigned long TotalMem = 0 ;
-	struct E820 *p = NULL;	
+	unsigned long TotalMem = 0;
+	struct E820 *p = NULL;
 	
 	printf_color(BLACK, BLUE, "Display Physics Address MAP,Type(1:RAM,2:ROM or Reserved,3:ACPI Reclaim Memory,4:ACPI NVS Memory,Others:Undefine)\n");
 	p = (struct E820 *)0xffff800000007e00;
@@ -44,8 +49,8 @@ void init_memory()
 		if(p->type == 1)
 			TotalMem +=  p->length;
 
-		memory_management_struct.e820[i].address += p->address;
-		memory_management_struct.e820[i].length	 += p->length;
+		memory_management_struct.e820[i].address = p->address;
+		memory_management_struct.e820[i].length	 = p->length;
 		memory_management_struct.e820[i].type	 = p->type;
 		memory_management_struct.e820_length 	 = i;
 
@@ -54,7 +59,7 @@ void init_memory()
 			break;
 	}
 
-	printf_color(BLACK, ORANGE, "OS Can Used Total RAM:%X\n",TotalMem);
+	printf_color(BLACK, ORANGE, "OS Can Use Total RAM:%X\n",TotalMem);
 
 	TotalMem = 0;
 	// 计算总内存
@@ -216,27 +221,15 @@ void init_memory()
 
 unsigned long page_init(struct Page * page,unsigned long flags)
 {
-	if(!page->attribute)
+	page->attribute |= flags;
+	
+	if(!page->reference_count || (page->attribute & PG_Shared))
 	{
-		*(memory_management_struct.bits_map + ((page->PHY_address >> PAGE_2M_SHIFT) >> 6)) |= 1UL << (page->PHY_address >> PAGE_2M_SHIFT) % 64;
-		page->attribute = flags;
 		page->reference_count++;
-		page->zone_struct->page_using_count++;
-		page->zone_struct->page_free_count--;
-		page->zone_struct->total_pages_link++;
-	}
-	else if((page->attribute & PG_Referenced) || (page->attribute & PG_K_Share_To_U) || (flags & PG_Referenced) || (flags & PG_K_Share_To_U))
-	{
-		page->attribute |= flags;
-		page->reference_count++;
-		page->zone_struct->total_pages_link++;
-	}
-	else
-	{
-		*(memory_management_struct.bits_map + ((page->PHY_address >> PAGE_2M_SHIFT) >> 6)) |= 1UL << (page->PHY_address >> PAGE_2M_SHIFT) % 64;	
-		page->attribute |= flags;
-	}
-	return 0;
+		page->zone_struct->total_pages_link++;		
+	}	
+	
+	return 1;
 }
 
 unsigned long * Get_gdt()
@@ -335,4 +328,679 @@ struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags)
 find_free_pages:
 
 	return (struct Page *)(memory_management_struct.pages_struct + page);
+}
+// 创建 slab_cache
+struct Slab_cache * slab_create(unsigned long size,
+	void *(* constructor)(void * Vaddress,unsigned long arg),
+	void *(* destructor)(void * Vaddress,unsigned long arg),unsigned long arg)
+{
+	struct Slab_cache * slab_cache = NULL;
+
+	slab_cache = (struct Slab_cache *)kmalloc(sizeof(struct Slab_cache),0);
+	
+	if(slab_cache == NULL)
+	{
+		printf_color(BLACK, RED, "slab_create()->kmalloc()=>slab_cache == NULL\n");
+		return NULL;
+	}
+	// 申请成功之后需要先清空
+	memset(slab_cache,0,sizeof(struct Slab_cache));
+	// 对齐，初始化，先创建一个 slab
+	slab_cache->size = SIZEOF_LONG_ALIGN(size);
+	slab_cache->total_using = 0;
+	slab_cache->total_free = 0;
+	slab_cache->cache_pool = (struct Slab *)kmalloc(sizeof(struct Slab),0);
+	
+	if(slab_cache->cache_pool == NULL)
+	{
+		printf_color(BLACK, RED, "slab_create()->kmalloc()=>slab_cache->cache_pool == NULL\n");
+		kfree(slab_cache);
+		return NULL;
+	}
+	
+	memset(slab_cache->cache_pool,0,sizeof(struct Slab));
+	// 构造、析构函数
+	slab_cache->cache_dma_pool = NULL;
+	slab_cache->constructor = constructor;
+	slab_cache->destructor = destructor;
+
+	list_init(&slab_cache->cache_pool->list);
+	// 为第一个 slab 申请页
+	slab_cache->cache_pool->page = alloc_pages(ZONE_NORMAL,1,0);
+	
+	if(slab_cache->cache_pool->page == NULL)
+	{
+		printf_color(BLACK, RED, "slab_create()->alloc_pages()=>slab_cache->cache_pool->page == NULL\n");
+		kfree(slab_cache->cache_pool);
+		kfree(slab_cache);
+		return NULL;
+	}
+	
+	page_init(slab_cache->cache_pool->page,PG_Kernel);
+
+	slab_cache->cache_pool->using_count = PAGE_2M_SIZE/slab_cache->size;
+	slab_cache->cache_pool->free_count = slab_cache->cache_pool->using_count;
+	slab_cache->total_free = slab_cache->cache_pool->free_count;
+
+	slab_cache->cache_pool->Vaddress = Phy_To_Virt(slab_cache->cache_pool->page->PHY_address);
+
+	slab_cache->cache_pool->color_count = slab_cache->cache_pool->free_count;
+	slab_cache->cache_pool->color_length = ((slab_cache->cache_pool->color_count + sizeof(unsigned long) * 8 - 1) >> 6) << 3;
+	slab_cache->cache_pool->color_map = (unsigned long *)kmalloc(slab_cache->cache_pool->color_length,0);
+
+	if(slab_cache->cache_pool->color_map == NULL)
+	{
+		printf_color(BLACK, RED, "slab_create()->kmalloc()=>slab_cache->cache_pool->color_map == NULL\n");
+		
+		free_pages(slab_cache->cache_pool->page,1);
+		kfree(slab_cache->cache_pool);
+		kfree(slab_cache);
+		return NULL;
+	}
+	
+	memset(slab_cache->cache_pool->color_map,0,slab_cache->cache_pool->color_length);
+
+	return slab_cache;
+}
+// slab_cache 析构
+unsigned long slab_destroy(struct Slab_cache * slab_cache)
+{
+	struct Slab * slab_p = slab_cache->cache_pool;
+	struct Slab * tmp_slab = NULL;
+
+	if (slab_cache->total_using != 0)
+	{
+		printf_color(BLACK, RED, "slab_cache->total_using != 0\n");
+		return 0;
+	}
+
+	while(!list_is_empty(&slab_p->list))
+	{
+		tmp_slab = slab_p;
+		slab_p = container_of(list_next(&slab_p->list), struct Slab, list);
+
+		list_del (&tmp_slab->list);
+		kfree(tmp_slab->color_map);
+
+		page_clean(tmp_slab->page);
+		free_pages(tmp_slab->page, 1);
+		kfree(tmp_slab);
+	}
+
+	kfree(slab_p->color_map);
+	page_clean(slab_p->page);
+	free_pages(slab_p->page, 1);
+	kfree(slab_p);
+	kfree(slab_cache);
+	return 1;
+}
+// 申请 slab
+void * slab_malloc(struct Slab_cache * slab_cache, unsigned long arg)
+{
+	struct Slab * slab_p = slab_cache->cache_pool;
+	struct Slab * tmp_slab = NULL;
+	int j = 0;
+	// 如果没有空余 slab，进行内存申请
+	if (slab_cache->total_free == 0)
+	{
+		tmp_slab = (struct Slab *) kmalloc(sizeof(struct Slab), 0);
+		// 如果没有申请到，返回空
+		if (tmp_slab == NULL)
+		{
+			printf_color(BLACK, RED, "slab_malloc()->kmalloc()=>tmp_slab == NULL\n");
+			return NULL;
+		}
+		// 初始化
+		memset(tmp_slab, 0, sizeof(struct Slab));
+		list_init(&tmp_slab->list);
+		// 申请页，失败释放内存，并返回空
+		tmp_slab->page = alloc_pages(ZONE_NORMAL, 1, 0);
+		if (tmp_slab->page == NULL)
+		{
+			printf_color(BLACK, RED, "slab_malloc()->alloc_pages()=>tmp_slab->page == NULL\n");
+			kfree(tmp_slab);
+			return NULL;
+		}
+
+		page_init(tmp_slab->page, PG_Kernel);
+		// 容量为一个页表，设置虚拟地址，位图数量根据缓冲池 size 确定
+		tmp_slab->using_count = PAGE_2M_SIZE / slab_cache->size;
+		tmp_slab->free_count = tmp_slab->using_count;
+		tmp_slab->Vaddress = Phy_To_Virt(tmp_slab->page->PHY_address);
+		// 位图对应
+		tmp_slab->color_count = tmp_slab->free_count;
+		tmp_slab->color_length = ((tmp_slab->color_count + sizeof(unsigned long) * 8 - 1) >> 6) << 3;
+		tmp_slab->color_map = (unsigned long *)kmalloc(tmp_slab->color_length,0);
+		// 位图申请失败
+		if(tmp_slab->color_map == NULL)
+		{
+			printf_color(BLACK, RED, "slab_malloc()->kmalloc()=>tmp_slab->color_map == NULL\n");
+			free_pages(tmp_slab->page,1);
+			kfree(tmp_slab);
+			return NULL;
+		}
+		// 初始化，链接
+		memset(tmp_slab->color_map,0,tmp_slab->color_length);	
+		list_add_to_behind(&slab_cache->cache_pool->list,&tmp_slab->list);
+		slab_cache->total_free  += tmp_slab->color_count;	
+
+		for(j = 0;j < tmp_slab->color_count;j++)
+		{
+			if( (*(tmp_slab->color_map + (j >> 6)) & (1UL << (j % 64))) == 0 )
+			{
+				*(tmp_slab->color_map + (j >> 6)) |= 1UL << (j % 64);
+			
+				tmp_slab->using_count++;
+				tmp_slab->free_count--;
+
+				slab_cache->total_using++;
+				slab_cache->total_free--;
+				
+				if(slab_cache->constructor != NULL)
+				{
+					return slab_cache->constructor((char *)tmp_slab->Vaddress + slab_cache->size * j,arg);
+				}
+				else
+				{			
+					return (void *)((char *)tmp_slab->Vaddress + slab_cache->size * j);
+				}		
+			}
+		}
+	}
+	else
+	{
+		do
+		{
+			if(slab_p->free_count == 0)
+			{
+				slab_p = container_of(list_next(&slab_p->list),struct Slab,list);
+				continue;
+			}
+
+			for(j = 0;j < slab_p->color_count;j++)
+			{
+				// 全 1 则跳转
+				if(*(slab_p->color_map + (j >> 6)) == 0xffffffffffffffffUL)
+				{
+					j += 63;
+					continue;
+				}	
+				// 找到空位
+				if( (*(slab_p->color_map + (j >> 6)) & (1UL << (j % 64))) == 0 )
+				{
+					*(slab_p->color_map + (j >> 6)) |= 1UL << (j % 64);
+				
+					slab_p->using_count++;
+					slab_p->free_count--;
+
+					slab_cache->total_using++;
+					slab_cache->total_free--;
+					
+					if(slab_cache->constructor != NULL)
+						return slab_cache->constructor((char *)slab_p->Vaddress + 
+							slab_cache->size * j,arg);
+					else
+						return (void *)((char *)slab_p->Vaddress + slab_cache->size * j);
+				}
+			}
+		}while(slab_p != slab_cache->cache_pool);		
+	}
+	// 如果还在第一个 Slab，说明有问题
+	printf_color(BLACK, RED, "slab_malloc() ERROR: can`t alloc\n");
+	if(tmp_slab != NULL)
+	{
+		list_del(&tmp_slab->list);
+		kfree(tmp_slab->color_map);
+		page_clean(tmp_slab->page);
+		free_pages(tmp_slab->page,1);
+		kfree(tmp_slab);
+	}
+
+	return NULL;
+}
+// 释放 slab
+unsigned long slab_free(struct Slab_cache * slab_cache,void * address,unsigned long arg)
+{
+	struct Slab * slab_p = slab_cache->cache_pool;
+	int index = 0;
+
+	do
+	{
+		if(slab_p->Vaddress <= address && address < slab_p->Vaddress + PAGE_2M_SIZE)
+		{	// 将对应内存的位图清空
+			index = (address - slab_p->Vaddress) / slab_cache->size;
+			*(slab_p->color_map + (index >> 6)) ^= 1UL << index % 64;
+			slab_p->free_count++;
+			slab_p->using_count--;
+
+			slab_cache->total_using--;
+			slab_cache->total_free++;
+			// 如果存在析构函数
+			if(slab_cache->destructor != NULL)
+			{
+				slab_cache->destructor((char *)slab_p->Vaddress + slab_cache->size * index,arg);
+			}
+			// 如果
+			if((slab_p->using_count == 0) && (slab_cache->total_free >= slab_p->color_count * 3 / 2))
+			{
+				list_del(&slab_p->list);
+				slab_cache->total_free -= slab_p->color_count;
+
+				kfree(slab_p->color_map);
+				
+				page_clean(slab_p->page);
+				free_pages(slab_p->page,1);
+				kfree(slab_p);				
+			}
+
+			return 1;
+		}
+		else
+		{
+			slab_p = container_of(list_next(&slab_p->list),struct Slab,list);
+			continue;	
+		}		
+
+	}while(slab_p != slab_cache->cache_pool);
+
+	printf_color(BLACK, RED, "slab_free() ERROR: address not in slab\n");
+
+	return 0;
+}
+// 为 slab_cache 分配空间
+unsigned long slab_init()
+{
+	struct Slab_cache t[16] = 
+{
+	{32	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{64	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{128	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{256	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{512	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{1024	,0	,0	,NULL	,NULL	,NULL	,NULL},			//1KB
+	{2048	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{4096	,0	,0	,NULL	,NULL	,NULL	,NULL},			//4KB
+	{8192	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{16384	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{32768	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{65536	,0	,0	,NULL	,NULL	,NULL	,NULL},			//64KB
+	{131072	,0	,0	,NULL	,NULL	,NULL	,NULL},			//128KB
+	{262144	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{524288	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{1048576,0	,0	,NULL	,NULL	,NULL	,NULL},			//1MB
+};
+	memcpy(t, kmalloc_cache_size, sizeof(t));
+	struct Page * page = NULL;
+	unsigned long * virtual = NULL; // get a free page and set to empty page table and return the virtual address
+	unsigned long i,j;
+
+	unsigned long tmp_address = memory_management_struct.end_of_struct;
+
+	for(i = 0;i < 16;i++)
+	{	// 放在内存管理结构体后面，然后将结构体往后延伸
+		kmalloc_cache_size[i].cache_pool = (struct Slab *)memory_management_struct.end_of_struct;
+		memory_management_struct.end_of_struct = memory_management_struct.end_of_struct + sizeof(struct Slab) + sizeof(long) * 10;
+
+		list_init(&kmalloc_cache_size[i].cache_pool->list);	
+
+		kmalloc_cache_size[i].cache_pool->using_count = 0;
+		kmalloc_cache_size[i].cache_pool->free_count  = PAGE_2M_SIZE / kmalloc_cache_size[i].size;
+		// 位图大小取决于当前页可容纳的 slab_cache->size 数量，按照 8 字节对齐
+		kmalloc_cache_size[i].cache_pool->color_length =((PAGE_2M_SIZE / 
+			kmalloc_cache_size[i].size + sizeof(unsigned long) * 8 - 1) >> 6) << 3;
+
+		kmalloc_cache_size[i].cache_pool->color_count = kmalloc_cache_size[i].cache_pool->free_count;
+		kmalloc_cache_size[i].cache_pool->color_map = (unsigned long *)memory_management_struct.end_of_struct;
+
+		memory_management_struct.end_of_struct = (unsigned long)(memory_management_struct.end_of_struct + 
+			kmalloc_cache_size[i].cache_pool->color_length + sizeof(long) * 10) & ( ~ (sizeof(long) - 1));
+		// 置 1
+		memset(kmalloc_cache_size[i].cache_pool->color_map,0xff,
+			kmalloc_cache_size[i].cache_pool->color_length);
+		// 清零
+		for(j = 0;j < kmalloc_cache_size[i].cache_pool->color_count;j++)
+			*(kmalloc_cache_size[i].cache_pool->color_map + (j >> 6)) ^= 1UL << j % 64;
+
+		kmalloc_cache_size[i].total_free = kmalloc_cache_size[i].cache_pool->color_count;
+		kmalloc_cache_size[i].total_using = 0;
+	}
+
+	////////////	init page for kernel code and memory management struct
+
+	i = Virt_To_Phy(memory_management_struct.end_of_struct) >> PAGE_2M_SHIFT;
+	// 下边界对齐，初始化 slab 池对应空间在全局内存管理的位图情况
+	for(j = PAGE_2M_ALIGN(Virt_To_Phy(tmp_address)) >> PAGE_2M_SHIFT;j <= i;j++)
+	{
+		page =  memory_management_struct.pages_struct + j;
+		*(memory_management_struct.bits_map + ((page->PHY_address >> PAGE_2M_SHIFT) >> 6)) |= 1UL << (page->PHY_address >> PAGE_2M_SHIFT) % 64;
+		page->zone_struct->page_using_count++;
+		page->zone_struct->page_free_count--;
+		page_init(page,PG_PTable_Maped | PG_Kernel_Init | PG_Kernel);
+	}
+
+	printf_color(BLACK, ORANGE, "2.memory_management_struct.bits_map:%018X\t\
+		zone_struct->page_using_count:%d\tzone_struct->page_free_count:%d\n",
+		*memory_management_struct.bits_map,memory_management_struct.zones_struct->page_using_count,
+		memory_management_struct.zones_struct->page_free_count);
+	// 分配 16 个页给 slab_cache
+	for(i = 0;i < 16;i++)
+	{	// 从内核后一段地址开始（2MB 对齐）；转化成对应页表号
+		virtual = (unsigned long *)((memory_management_struct.end_of_struct + PAGE_2M_SIZE * i + PAGE_2M_SIZE - 1) & PAGE_2M_MASK);
+		page = Virt_To_2M_Page(virtual);
+		// 将后面的页分配给 slab_cache
+		*(memory_management_struct.bits_map + ((page->PHY_address >> PAGE_2M_SHIFT) >> 6)) |= 1UL << (page->PHY_address >> PAGE_2M_SHIFT) % 64;
+		page->zone_struct->page_using_count++;
+		page->zone_struct->page_free_count--;
+
+		page_init(page,PG_PTable_Maped | PG_Kernel_Init | PG_Kernel);
+
+		kmalloc_cache_size[i].cache_pool->page = page;
+		kmalloc_cache_size[i].cache_pool->Vaddress = virtual;
+	}
+
+	printf_color(BLACK, ORANGE, "3.memory_management_struct.bits_map:%018X\tzone_struct->page_using_count:%d\t\
+		zone_struct->page_free_count:%d\n",*memory_management_struct.bits_map,
+		memory_management_struct.zones_struct->page_using_count,
+		memory_management_struct.zones_struct->page_free_count);
+
+	printf_color(BLACK, ORANGE, "start_code:%018X,end_code:%018X,end_data:%018X,end_brk:%018X,\
+		end_of_struct:%018X\n",memory_management_struct.start_code,
+		memory_management_struct.end_code,memory_management_struct.end_data,
+		memory_management_struct.end_brk, memory_management_struct.end_of_struct);
+
+	return 1;
+}
+// slab中内存块 回收
+unsigned long kfree(void * address)
+{
+	int i;
+	int index;
+	struct Slab * slab = NULL;
+	void * page_base_address = (void *)((unsigned long)address & PAGE_2M_MASK);
+
+	for(i = 0;i < 16;i++)
+	{
+		slab = kmalloc_cache_size[i].cache_pool;
+		do
+		{	// 查找地址对应的 slab
+			if(slab->Vaddress == page_base_address)
+			{	// 获取对应位图坐标并清空
+				index = (address - slab->Vaddress) / kmalloc_cache_size[i].size;
+				*(slab->color_map + (index >> 6)) ^= 1UL << index % 64;
+
+				slab->free_count++;
+				slab->using_count--;
+				kmalloc_cache_size[i].total_free++;
+				kmalloc_cache_size[i].total_using--;
+				// 释放后如果为空；slab 池中总量大于单个的 1.5 倍；不是第一个 slab；那么释放这个 slab
+				if((slab->using_count == 0) && (kmalloc_cache_size[i].total_free >= 
+					slab->color_count * 3 / 2) && (kmalloc_cache_size[i].cache_pool != slab))
+				{
+					switch(kmalloc_cache_size[i].size)
+					{
+						////////////////////slab + map in 2M page
+						case 32:
+						case 64:
+						case 128:
+						case 256:	
+						case 512:
+							list_del(&slab->list);
+							kmalloc_cache_size[i].total_free -= slab->color_count;
+
+							page_clean(slab->page);
+							free_pages(slab->page,1);
+							break;
+				
+						default:
+							list_del(&slab->list);
+							kmalloc_cache_size[i].total_free -= slab->color_count;
+
+							kfree(slab->color_map);
+
+							page_clean(slab->page);
+							free_pages(slab->page,1);
+							kfree(slab);
+							break;
+					}
+ 
+				}
+
+				return 1;
+			}
+			else
+				slab = container_of(list_next(&slab->list),struct Slab,list);				
+
+		}while(slab != kmalloc_cache_size[i].cache_pool);
+	
+	}
+	
+	printf_color(BLACK, RED, "kfree() ERROR: can`t free memory\n");
+	
+	return 0;
+}
+// 申请新的 slab
+struct Slab * kmalloc_create(unsigned long size)
+{
+	int i;
+	struct Slab * slab = NULL;
+	struct Page * page = NULL;
+	unsigned long * vaddresss = NULL;
+	long structsize = 0;
+	// 在 ZONE_NORMAL 中申请一个 FLAG 为 0 的页面
+	page = alloc_pages(ZONE_NORMAL,1, 0);
+	
+	if(page == NULL)
+	{
+		printf_color(BLACK, RED, "kmalloc_create()->alloc_pages()=>page == NULL\n");
+		return NULL;
+	}
+	
+	page_init(page,PG_Kernel);
+
+	switch(size)
+	{
+		////////////////////slab + map in 2M page
+		// 32B ~ 512B 区间执行相同的
+		case 32:
+		case 64:
+		case 128:
+		case 256:
+		case 512:
+			// 获取虚拟地址
+			vaddresss = Phy_To_Virt(page->PHY_address);
+			// Slab + 位图大小（单位：字节）
+			structsize = sizeof(struct Slab) + PAGE_2M_SIZE / size / 8;
+			// 得到 slab 的起始地址（位于页尾部）；位图位于 slab 后面
+			slab = (struct Slab *)((unsigned char *)vaddresss + PAGE_2M_SIZE - structsize);
+			slab->color_map = (unsigned long *)((unsigned char *)slab + sizeof(struct Slab));
+			// 参数初始化
+			slab->free_count = (PAGE_2M_SIZE - (PAGE_2M_SIZE / size / 8) - sizeof(struct Slab)) / size;
+			slab->using_count = 0;
+			slab->color_count = slab->free_count;
+			slab->Vaddress = vaddresss;
+			slab->page = page;
+			list_init(&slab->list);
+			// 置位
+			slab->color_length = ((slab->color_count + sizeof(unsigned long) * 8 - 1) >> 6) << 3;
+			memset(slab->color_map,0xff,slab->color_length);
+			// 置位再清空？神经病
+			for(i = 0;i < slab->color_count;i++)
+				*(slab->color_map + (i >> 6)) ^= 1UL << i % 64;
+
+			break;
+
+		///////////////////kmalloc slab and map,not in 2M page anymore
+
+		case 1024:		//1KB
+		case 2048:
+		case 4096:		//4KB
+		case 8192:
+		case 16384:
+
+		//////////////////color_map is a very short buffer.
+
+		case 32768:
+		case 65536:
+		case 131072:		//128KB
+		case 262144:
+		case 524288:
+		case 1048576:		//1MB
+			// 当内存单元在 1KB 以上时，使用 kmalloc 为 slab 和位图申请内存，减少内存浪费
+			slab = (struct Slab *)kmalloc(sizeof(struct Slab),0);
+			slab->free_count = PAGE_2M_SIZE / size;
+			slab->using_count = 0;
+			slab->color_count = slab->free_count;
+			slab->color_length = ((slab->color_count + sizeof(unsigned long) * 8 - 1) >> 6) << 3;
+			// 用 kmalloc 为位图申请内存
+			slab->color_map = (unsigned long *)kmalloc(slab->color_length,0);
+			memset(slab->color_map,0xff,slab->color_length);
+
+			slab->Vaddress = Phy_To_Virt(page->PHY_address);
+			slab->page = page;
+			list_init(&slab->list);
+
+			for(i = 0;i < slab->color_count;i++)
+				*(slab->color_map + (i >> 6)) ^= 1UL << i % 64;
+
+			break;
+
+		default:
+
+			printf_color(BLACK, RED, "kmalloc_create() ERROR: wrong size:%08d\n",size);
+			free_pages(page,1);
+			
+			return NULL;
+	}	
+	
+	return slab;
+}
+
+void free_pages(struct Page * page,int number)
+{	
+	int i = 0;
+	
+	if(page == NULL)
+	{
+		printf_color(BLACK, RED, "free_pages() ERROR: page is invalid\n");
+		return ;
+	}	
+
+	if(number >= 64 || number <= 0)
+	{
+		printf_color(BLACK, RED, "free_pages() ERROR: number is invalid\n");
+		return ;	
+	}
+	
+	for(i = 0;i<number;i++,page++)
+	{
+		*(memory_management_struct.bits_map + ((page->PHY_address >> PAGE_2M_SHIFT) >> 6)) &= ~(1UL << (page->PHY_address >> PAGE_2M_SHIFT) % 64);
+		page->zone_struct->page_using_count--;
+		page->zone_struct->page_free_count++;
+		page->attribute = 0;
+	}
+}
+// 在 slab 池中的 slab 中申请新的内存，大小为 size，返回虚拟地址
+void * kmalloc(unsigned long size,unsigned long gfp_flages)
+{
+	int i,j;
+	struct Slab * slab = NULL;
+	// 先判断范围，slab_cache 的最大值不超过 1MB
+	if(size > 1048576)
+	{
+		printf_color(BLACK, RED, "kmalloc() ERROR: kmalloc size too long:%08d\n",size);
+		return NULL;
+	}
+	// 寻找第一个符合大小的 slab_cache
+	for(i = 0;i < 16;i++)
+		if(kmalloc_cache_size[i].size >= size)
+			break;
+	slab = kmalloc_cache_size[i].cache_pool;
+	// 如果当前 slab_cache 没用光
+	if(kmalloc_cache_size[i].total_free != 0)
+	{
+		do
+		{	// 如果当前 slab 页内没有空余位置，寻找下一个 slab
+			if(slab->free_count == 0)
+				slab = container_of(list_next(&slab->list),struct Slab,list);
+			else
+				break;
+		}while(slab != kmalloc_cache_size[i].cache_pool);	
+	}
+	else
+	{	// 如果 slab_cache 用尽，申请新的 slab
+		slab = kmalloc_create(kmalloc_cache_size[i].size);
+		
+		if(slab == NULL)
+		{
+			printf_color(BLACK, BLUE, "kmalloc()->kmalloc_create()=>slab == NULL\n");
+			return NULL;
+		}
+		
+		kmalloc_cache_size[i].total_free += slab->color_count;
+		printf_color(BLACK, BLUE, "kmalloc()->kmalloc_create()<=size:%#010x\n",kmalloc_cache_size[i].size);///////
+		
+		list_add_to_before(&kmalloc_cache_size[i].cache_pool->list,&slab->list);
+	}
+	// 在位图中寻找空闲位置
+	for(j = 0;j < slab->color_count;j++)
+	{
+		if(*(slab->color_map + (j >> 6)) == 0xffffffffffffffffUL)
+		{
+			j += 63;
+			continue;
+		}
+		
+		if( (*(slab->color_map + (j >> 6)) & (1UL << (j % 64))) == 0 )
+		{
+			*(slab->color_map + (j >> 6)) |= 1UL << (j % 64);
+			slab->using_count++;
+			slab->free_count--;
+
+			kmalloc_cache_size[i].total_free--;
+			kmalloc_cache_size[i].total_using++;
+
+			return (void *)((char *)slab->Vaddress + kmalloc_cache_size[i].size * j);
+		}
+	}
+
+	printf_color(BLACK, BLUE, "kmalloc() ERROR: no memory can alloc\n");
+	return NULL;
+}
+
+unsigned long page_clean(struct Page * page)
+{
+	page->reference_count--;
+	page->zone_struct->total_pages_link--;
+
+	if(!page->reference_count)
+	{
+		page->attribute &= PG_PTable_Maped;
+	}
+	
+	return 1;
+}
+
+unsigned long get_page_attribute(struct Page * page)
+{
+	if(page == NULL)
+	{
+		color_printk(RED,BLACK,"get_page_attribute() ERROR: page == NULL\n");
+		return 0;
+	}
+	else
+		return page->attribute;
+}
+
+unsigned long set_page_attribute(struct Page * page,unsigned long flags)
+{
+	if(page == NULL)
+	{
+		color_printk(RED,BLACK,"set_page_attribute() ERROR: page == NULL\n");
+		return 0;
+	}
+	else
+	{
+		page->attribute = flags;
+		return 1;
+	}
 }

@@ -1,4 +1,5 @@
- 	mov word    [SectorNumber], SectorNumOfRootDirStart
+    ;   载入根目录簇号地址
+    mov word    [SectorNumber], SectorNumOfRootDirStart
 Label_Search_In_Root_Dir_Begin:
     cmp     word [RootDirSizeForLoop], 0
     jz      Label_No_LoaderBin
@@ -9,7 +10,7 @@ Label_Search_In_Root_Dir_Begin:
     mov     ax, [SectorNumber]
     mov     cl, 1
     call    Func_ReadOneSector
-    mov     si, KernelFileName
+    mov     si, LoaderFileName
     mov     di, 8000h
     cld
     mov     dx, 10h
@@ -36,23 +37,66 @@ Label_Go_On:
 Label_Different:
     and     di, 0ffe0h
     add     di, 20h
-    mov     si, KernelFileName
+    mov     si, LoaderFileName
     jmp     Label_Search_For_LoaderBin
 
 Label_Goto_Next_Sector_In_Root_Dir:
     add     word [SectorNumber], 1
     jmp     Label_Search_In_Root_Dir_Begin
+
+;   找到后
+Label_FileName_Found:
+    mov     ax, RootDirSectors
+    and     di, 0ffe0h
+    ; 令 di 指向起始簇地址，获取起始簇号
+    add     di, 01ah
+    mov     cx, word [es:di]
+    push    cx
+    add     cx, ax
+    add     cx, SectorBalance
+    mov     ax, BaseOfLoader
+    mov     es, ax
+    mov     bx, OffsetOfLoader
+    mov     ax, cx
+
+;   加载文件
+Label_Go_On_Loading_File:
+    push    ax
+    push    bx
+    mov     ah, 0eh
+    mov     al, '.'
+    mov     bl, 0fh
+    int     10h
+    pop     bx
+    pop     ax
+
+    mov     cl, 1
+    call    Func_ReadOneSector
+    pop     ax
+    call    Func_GetFATEntry
+    cmp     ax, 0fffh
+    jz      Label_File_Loaded
+    push    ax
+    mov     dx, RootDirSectors
+    add     ax, dx
+    add     ax, SectorBalance
+    add     bx, [BPB_BytesPerSec]
+    jmp     Label_Go_On_Loading_File
+
+Label_File_Loaded:
+    jmp     BaseOfLoader:OffsetOfLoader
+
 ;   没有找到 Loader.bin
 Label_No_LoaderBin:
     mov     bx, 000ch
     mov     dx, 0100h
-    mov     cx, 14
+    mov     cx, 21
     mov     ax, ds
     mov     es, ax
     mov     ax, 1301h
-    mov     bp, NoKernelMessage
+    mov     bp, NoLoaderMessage
     int     10h
-	jmp $
+    call    Stop
 
 ;   解析FAT表项，获取地址, AH=FAT表项号
 Func_GetFATEntry:
@@ -122,95 +166,3 @@ Label_Go_On_Reading:
     add     esp, 2
     pop bp
     ret
-;   找到后
-Label_FileName_Found:
-    mov     ax, RootDirSectors
-    and     di, 0ffe0h
-    ; 令 di 指向起始簇地址，获取起始簇号
-    add     di, 01ah
-    mov     cx, word [es:di]
-    push    cx
-    add     cx, ax
-    add     cx, SectorBalance
-    mov     eax, BaseTmpOfKernelAddr
-    mov     es, eax
-    mov     bx, OffsetTmpOfKernelFile
-    mov     ax, cx
-
-;   加载文件，读取位置已经压栈
-Label_Go_On_Loading_File:
-    push    ax
-    push    bx
-    mov     ah, 0eh
-    mov     al, '.'
-    mov     bl, 0fh
-    int     10h
-    pop     bx
-    pop     ax
-
-    mov     cl, 1
-    call    Func_ReadOneSector
-    pop     ax
-
-;;;;;;;;;;;;;;;;;;;;;;;	
-	push	cx
-	push	eax
-	;push	fs
-	push	edi
-	push	ds
-	push	esi
-;   一次转移 512 个字节
-	mov		cx,	200h
-	mov 	ax, BaseOfKernelFile
-	mov 	fs, ax
-;   内核目标地址
-	mov 	edi, dword [OffsetOfKernelFileCount]
-
-	mov		ax,	BaseTmpOfKernelAddr
-	mov		ds,	ax
-	mov		esi,	OffsetTmpOfKernelFile
-
-Label_Mov_Kernel:;      [0:src] ; [0x10000:dest]
-	mov		al,	byte	[ds:esi]
-	mov		byte	[fs:edi],	al
-	inc		esi
-	inc		edi
-	loop	Label_Mov_Kernel
-
-	mov		eax,	0x1000
-	mov		ds,	eax
-;   移动完成后增加目标地址
-	mov		dword	[OffsetOfKernelFileCount],	edi
-
-	pop		esi
-	pop		ds
-	pop		edi
-	;pop		fs
-	pop		eax
-	pop		cx
-
-    ;读取
-	call	Func_GetFATEntry
-	cmp		ax,	0FFFh
-	jz		Label_File_Loaded
-	push	ax
-	mov		dx,	RootDirSectors
-	add		ax,	dx
-	add		ax,	SectorBalance
-
-	jmp		Label_Go_On_Loading_File
-
-Label_File_Loaded:
-	mov		ax, 0B800h
-	mov		gs, ax
-	mov		ah, 0Fh				; 0000: 黑底    1111: 白字
-	mov		al, 'G'
-	mov		[gs:((80 * 0 + 39) * 2)], ax	; 屏幕第 0 行, 第 39 列。
-
-KillMotor:
-	push	dx
-	mov		dx,	03F2h
-	mov		al,	0	
-	out		dx,	al
-	pop		dx
-

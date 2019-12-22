@@ -173,7 +173,7 @@ ENTRY(_stack_start)
 .align 8
 
 .org	0x1000
-__PML4E://  页目录 一共 4kb 大小 47 ~ 39位
+__PML4E://  页目录 一共 4kb 大小 47 ~ 39位(9位)
 	.quad	0x102007    //0x102000 页表 谁都可以访问
 	.fill	255,8,0
 	.quad	0x102007    //同上
@@ -191,15 +191,35 @@ __PDE:  //  83 表示 P 置 1 无下级页表，特权级，可写可读 29 ~ 21
 	.quad	0x400087
 	.quad	0x600087
 	.quad	0x800087		/* 0x800083 */
-	.quad	0xe0000087		/* 0xa00000 */
+	.quad	0xa00087
+	.quad	0xc00087
+	.quad	0xe00087
+	.quad	0x1000087
+	.quad	0x1200087
+	.quad	0x1400087
+	.quad	0x1600087
+	.quad	0x1800087
+	.quad	0x1a00087
+	.quad	0x1c00087
+	.quad	0x1e00087
+	.quad	0x2000087
+	.quad	0x2200087
+	.quad	0x2400087
+	.quad	0x2600087
+	.quad	0x2800087
+	.quad	0x2a00087
+	.quad	0x2c00087
+	.quad	0x2e00087
+
+	.quad	0xe0000087		/*0x 3000000*/
 	.quad	0xe0200087
 	.quad	0xe0400087
 	.quad	0xe0600087
-	.quad	0xe0800087		/*0x1000000*/
+	.quad	0xe0800087
 	.quad	0xe0a00087
 	.quad	0xe0c00087
 	.quad	0xe0e00087
-	.fill	499,8,0
+	.fill	480,8,0
 
 
 .section    .data

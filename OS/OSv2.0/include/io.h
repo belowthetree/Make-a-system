@@ -1,6 +1,6 @@
-#include "type.h"
 #ifndef _IO_H
 #define _IO_H
+#include "type.h"
 
 void putchar(char c);
 void putchar_color(char c, uint32 BackColor, uint32 ForeColor);

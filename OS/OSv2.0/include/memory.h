@@ -1,6 +1,7 @@
-#include "type.h"
 #ifndef	_MEMORY_H
 #define	_MEMORY_H
+#include "type.h"
+#include "lib.h"
 
 // 一个页页表项个数
 #define PTRS_PER_PAGE	512
@@ -16,6 +17,9 @@
 //	对齐
 #define	PAGE_2M_MASK	(~(PAGE_2M_SIZE - 1))
 #define	PAGE_4K_MASK	(~(PAGE_4K_SIZE - 1))
+
+#define SIZEOF_LONG_ALIGN(size) ((size + sizeof(long) - 1) & ~(sizeof(long) - 1) )
+#define SIZEOF_INT_ALIGN(size) ((size + sizeof(int) - 1) & ~(sizeof(int) - 1) )
 
 #define	PAGE_2M_ALIGN(addr)	(((unsigned long)(addr) + PAGE_2M_SIZE - 1) &\
  PAGE_2M_MASK)
@@ -44,14 +48,15 @@ static unsigned long * Global_CR3 = NULL;
 
 #define PG_PTable_Maped	(1 << 0)// 映射过的页
 #define PG_Kernel_Init	(1 << 1)// 内核初始化程序
-#define PG_Referenced	(1 << 2)// 
-#define PG_Dirty		(1 << 3)
-#define PG_Active		(1 << 4)// 使用中
-#define PG_Up_To_Date	(1 << 5)
-#define PG_Device		(1 << 6)
-#define PG_Kernel		(1 << 7)// 内核层页
-#define PG_K_Share_To_U	(1 << 8)
-#define PG_Slab			(1 << 9)
+// #define PG_Referenced	(1 << 2)// 
+// #define PG_Dirty		(1 << 3)
+// #define PG_Active		(1 << 4)// 使用中
+// #define PG_Up_To_Date	(1 << 5)
+#define PG_Device		(1 << 2)// 设备寄存器/内存
+#define PG_Kernel		(1 << 3)// 内核层页
+#define PG_Shared		(1 << 4)// 共享
+// #define PG_K_Share_To_U	(1 << 8)
+// #define PG_Slab			(1 << 9)
 
 
 // 页面
@@ -121,22 +126,59 @@ struct Global_Memory_Descriptor
 					// 内存页管理结构的结尾地址
 	unsigned long	end_of_struct;	
 };
+// Slab内存
+struct Slab
+{
+	struct List list;
+	struct Page * page;
 
+	unsigned long using_count;
+	unsigned long free_count;
+
+	void * Vaddress;
+
+	unsigned long color_length;
+	unsigned long color_count;
+
+	unsigned long * color_map;
+};
+// Slab 池
+struct Slab_cache
+{
+	unsigned long	size;				// 一个 Slab 容纳的字节数
+	unsigned long	total_using;
+	unsigned long	total_free;
+	struct Slab *	cache_pool;// 指向Slab
+	struct Slab *	cache_dma_pool;
+	void *(* constructor)(void * Vaddress,unsigned long arg);
+	void *(* destructor)(void * Vaddress,unsigned long arg);
+};
+// 定义 16 个不同大小的内存池
+extern struct Slab_cache kmalloc_cache_size[16];
 
 extern struct Global_Memory_Descriptor memory_management_struct;
 
 void init_memory();
 unsigned long * Get_gdt();
 void get_memory_info();
-
+// 页相关函数
 struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags);
 unsigned long page_init(struct Page * page,unsigned long flags);
-
-
-
-
-
-
+unsigned long get_page_attribute(struct Page * page);
+// slab 池相关
+struct Slab_cache * slab_create(unsigned long size,
+	void *(* constructor)(void * Vaddress,unsigned long arg),
+	void *(* destructor)(void * Vaddress,unsigned long arg),unsigned long arg);
+unsigned long slab_destroy(struct Slab_cache * slab_cache);
+void * slab_malloc(struct Slab_cache * slab_cache, unsigned long arg);
+unsigned long slab_free(struct Slab_cache * slab_cache,void * address,unsigned long arg);
+unsigned long slab_init();
+// 内存管理相关
+unsigned long kfree(void * address);
+void * kmalloc(unsigned long size,unsigned long gfp_flages);
+void free_pages(struct Page * page,int number);
+unsigned long page_clean(struct Page * page);
+struct Slab * kmalloc_create(unsigned long size);
 
 
 #endif

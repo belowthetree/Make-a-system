@@ -172,6 +172,8 @@ unsigned long do_fork(struct pt_regs * regs,
 	thd->rsp0 = (unsigned long)tsk + STACK_SIZE;
 	thd->rip = regs->rip;
 	thd->rsp = (unsigned long)tsk + STACK_SIZE - sizeof(struct pt_regs);
+	thd->fs = KERNEL_DS;
+	thd->gs = KERNEL_DS;
 
 	if(!(tsk->flags & PF_KTHREAD))
 		thd->rip = regs->rip = (unsigned long)ret_system_call;
