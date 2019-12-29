@@ -168,7 +168,8 @@ void init_memory()
 	memory_management_struct.pages_struct->zone_struct = memory_management_struct.zones_struct;
 
 	memory_management_struct.pages_struct->PHY_address = 0UL;
-	memory_management_struct.pages_struct->attribute = 0;
+	set_page_attribute(memory_management_struct.pages_struct,PG_PTable_Maped | 
+		PG_Kernel_Init | PG_Kernel);
 	memory_management_struct.pages_struct->reference_count = 0;
 	memory_management_struct.pages_struct->age = 0;
 
@@ -182,13 +183,14 @@ void init_memory()
 
 	ZONE_DMA_INDEX = 0;	//need rewrite in the future
 	ZONE_NORMAL_INDEX = 0;	//need rewrite in the future
+	ZONE_NORMAL_INDEX = 0;
 
 	for(i = 0;i < memory_management_struct.zones_size;i++)	//need rewrite in the future
 	{
 		struct Zone * z = memory_management_struct.zones_struct + i;
 		printf_color(BLACK, ORANGE, "zone_start_address:%18uX,zone_end_address:%18uX,zone_length:%18uX,pages_group:%18uX,pages_length:%18uX\n",z->zone_start_address,z->zone_end_address,z->zone_length,z->pages_group,z->pages_length);
 		// 4G 以后的区域设置为未映射
-		if(z->zone_start_address == 0x100000000)
+		if(z->zone_start_address >= 0x100000000 && !ZONE_UNMAPED_INDEX)
 			ZONE_UNMAPED_INDEX = i;
 	}
 	// 全局内存管理结构体的结尾
@@ -203,8 +205,11 @@ void init_memory()
 	// 初始化页表
 	for(j = 0;j <= i;j++)
 	{
-		page_init(memory_management_struct.pages_struct + 
-			j,PG_PTable_Maped | PG_Kernel_Init | PG_Active | PG_Kernel);
+		struct Page * tmp_page = memory_management_struct.pages_struct + j;
+		page_init(tmp_page,PG_PTable_Maped | PG_Kernel_Init | PG_Kernel);
+		*(memory_management_struct.bits_map + ((tmp_page->PHY_address >> PAGE_2M_SHIFT) >> 6)) |= 1UL << (tmp_page->PHY_address >> PAGE_2M_SHIFT) % 64;
+		tmp_page->zone_struct->page_using_count++;
+		tmp_page->zone_struct->page_free_count--;
 	}
 
 	Global_CR3 = Get_gdt();
@@ -212,6 +217,12 @@ void init_memory()
 	printf_color(BLACK, INDIGO, "Global_CR3\t:%018X\n",Global_CR3);
 	printf_color(BLACK, INDIGO, "*Global_CR3\t:%018X\n",*Phy_To_Virt(Global_CR3) & (~0xff));
 	printf_color(BLACK, INDIGO, "**Global_CR3\t:%018X\n",*Phy_To_Virt(*Phy_To_Virt(Global_CR3) & (~0xff)) & (~0xff));
+	
+	printf_color(BLACK, ORANGE, "1.memory_management_struct.bits_map:%018X\t\
+		zone_struct->page_using_count:%d\tzone_struct->page_free_count:%d\n",
+		*memory_management_struct.bits_map,memory_management_struct.zones_struct->
+		page_using_count,memory_management_struct.zones_struct->page_free_count);
+
 	// 清除页表，作者说法是不需要保留一致性页表映射，可能是为了避免访问内核？或者重新分配
 	//for(i = 0;i < 10;i++)
 	//	*(Phy_To_Virt(Global_CR3)  + i) = 0UL;
@@ -253,29 +264,40 @@ struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags)
 {
 	int i;
 	unsigned long page = 0;
+	unsigned long attribute = 0;
 
 	int zone_start = 0;
 	int zone_end = 0;
+
+	if(number >= 64 || number <= 0)
+	{
+		printf_color(BLACK, RED, "alloc_pages() ERROR: number is invalid\n");
+		return NULL;		
+	}
+
 	// 根据类型选择不同区域，不过目前没分类，都一样
 	switch(zone_select)
 	{
 		case ZONE_DMA:
 				zone_start = 0;
 				zone_end = ZONE_DMA_INDEX;
+				attribute = PG_PTable_Maped;
 			break;
 
 		case ZONE_NORMAL:
 				zone_start = ZONE_DMA_INDEX;
 				zone_end = ZONE_NORMAL_INDEX;
+				attribute = PG_PTable_Maped;
 			break;
 
 		case ZONE_UNMAPED:
 				zone_start = ZONE_UNMAPED_INDEX;
 				zone_end = memory_management_struct.zones_size - 1;
+				attribute = 0;
 			break;
 
 		default:
-			printf_color(BLACK, RED, "alloc_pages error zone_select index\n");
+			printf_color(BLACK, RED, "alloc_pages zone_select index is invalid\n");
 			return NULL;
 			break;
 	}
@@ -285,7 +307,7 @@ struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags)
 	{
 		struct Zone * z;
 		unsigned long j;
-		unsigned long start,end,length;
+		unsigned long start,end;
 		unsigned long tmp;
 		// 当前区域空闲页数少于需要的页，则跳过
 		if((memory_management_struct.zones_struct + i)->page_free_count < number)
@@ -294,27 +316,32 @@ struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags)
 		z = memory_management_struct.zones_struct + i;
 		start = z->zone_start_address >> PAGE_2M_SHIFT;
 		end = z->zone_end_address >> PAGE_2M_SHIFT;
-		length = z->zone_length >> PAGE_2M_SHIFT;
 
 		tmp = 64 - start % 64;
 		// 这里先将 j 补齐到对齐 64 位
 		for(j = start;j <= end;j += j % 64 ? tmp : 64)
 		{	// 得到第 j 个页表空闲情况位图地址
 			unsigned long * p = memory_management_struct.bits_map + (j >> 6);
+			unsigned long k = 0;
 			unsigned long shift = j % 64;
-			unsigned long k;
-			for(k = shift;k < 64 - shift;k++)
+			
+			unsigned long num = (1UL << number) - 1;
+
+			for(k = shift;k < 64;k++)
 			{	// 判断是否有从 p 开始的 number 个页表可以使用
-				if( !(((*p >> k) | (*(p + 1) << (64 - k))) & 
-					(number == 64 ? 0xffffffffffffffffUL : ((1UL << number) - 1))))
+				if( !( (k ? ((*p >> k) | (*(p + 1) << (64 - k))) : *p) & (num) ) )
 				{
 					unsigned long	l;
-					// 可能要改
-					page = j / 64 * 64 + k;
+					page = j + k - shift;
 					for(l = 0;l < number;l++)
 					{
-						struct Page * x = memory_management_struct.pages_struct + page + l;
-						page_init(x,page_flags);
+						struct Page * pageptr = memory_management_struct.pages_struct + page + l;
+
+						*(memory_management_struct.bits_map + 
+							((pageptr->PHY_address >> PAGE_2M_SHIFT) >> 6)) |= 1UL << (pageptr->PHY_address >> PAGE_2M_SHIFT) % 64;
+						z->page_using_count++;
+						z->page_free_count--;
+						pageptr->attribute = attribute;
 					}
 					goto find_free_pages;
 				}
@@ -323,6 +350,7 @@ struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags)
 		}
 	}
 
+	printf_color(BLACK, RED, "alloc_pages() ERROR: no page can alloc\n");
 	return NULL;
 
 find_free_pages:
@@ -878,19 +906,19 @@ struct Slab * kmalloc_create(unsigned long size)
 void free_pages(struct Page * page,int number)
 {	
 	int i = 0;
-	
+	// 页表指针为空
 	if(page == NULL)
 	{
 		printf_color(BLACK, RED, "free_pages() ERROR: page is invalid\n");
 		return ;
-	}	
-
+	}
+	// 数量在 64 以上或者小于 0
 	if(number >= 64 || number <= 0)
 	{
 		printf_color(BLACK, RED, "free_pages() ERROR: number is invalid\n");
 		return ;	
 	}
-	
+	// 因为页表连续存放，所以顺序删除
 	for(i = 0;i<number;i++,page++)
 	{
 		*(memory_management_struct.bits_map + ((page->PHY_address >> PAGE_2M_SHIFT) >> 6)) &= ~(1UL << (page->PHY_address >> PAGE_2M_SHIFT) % 64);
@@ -984,7 +1012,7 @@ unsigned long get_page_attribute(struct Page * page)
 {
 	if(page == NULL)
 	{
-		color_printk(RED,BLACK,"get_page_attribute() ERROR: page == NULL\n");
+		printf_color(BLACK, RED, "get_page_attribute() ERROR: page == NULL\n");
 		return 0;
 	}
 	else
@@ -995,7 +1023,7 @@ unsigned long set_page_attribute(struct Page * page,unsigned long flags)
 {
 	if(page == NULL)
 	{
-		color_printk(RED,BLACK,"set_page_attribute() ERROR: page == NULL\n");
+		printf_color(BLACK, RED, "set_page_attribute() ERROR: page == NULL\n");
 		return 0;
 	}
 	else

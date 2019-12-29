@@ -50,7 +50,7 @@ static unsigned long * Global_CR3 = NULL;
 #define PG_Kernel_Init	(1 << 1)// 内核初始化程序
 // #define PG_Referenced	(1 << 2)// 
 // #define PG_Dirty		(1 << 3)
-// #define PG_Active		(1 << 4)// 使用中
+#define PG_Active		(1 << 4)// 使用中
 // #define PG_Up_To_Date	(1 << 5)
 #define PG_Device		(1 << 2)// 设备寄存器/内存
 #define PG_Kernel		(1 << 3)// 内核层页
@@ -165,6 +165,7 @@ void get_memory_info();
 struct Page * alloc_pages(int zone_select,int number,unsigned long page_flags);
 unsigned long page_init(struct Page * page,unsigned long flags);
 unsigned long get_page_attribute(struct Page * page);
+unsigned long set_page_attribute(struct Page * page,unsigned long flags);
 // slab 池相关
 struct Slab_cache * slab_create(unsigned long size,
 	void *(* constructor)(void * Vaddress,unsigned long arg),

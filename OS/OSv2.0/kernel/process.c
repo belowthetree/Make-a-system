@@ -89,10 +89,10 @@ void init_process()
 	init_tss[0].rsp0 = init_thread.rsp0;
 	list_init(&init_task_union.task.list);
 	kernel_thread(init,10,CLONE_FS | CLONE_FILES | CLONE_SIGNAL);
+
 	init_task_union.task.state = TASK_RUNNING;
 	p = container_of(list_next(&current->list),struct task_struct,list);
 	struct task_struct * tmp = &init_task_union.task;
-
 	switch_to(current, p);
 }
 
@@ -150,7 +150,7 @@ unsigned long do_fork(struct pt_regs * regs,
 	struct Page *p = NULL;
 	// 先申请物理页
 	printf("alloc_pages,bitmap:%018X\n",*memory_management_struct.bits_map);
-	p = alloc_pages(ZONE_NORMAL,1,PG_PTable_Maped | PG_Active | PG_Kernel);
+	p = alloc_pages(ZONE_NORMAL,1,PG_PTable_Maped | PG_Kernel);
 	printf("alloc_pages,bitmap:%018X\n",*memory_management_struct.bits_map);
 	// 加上偏移 0xffff800000000000 即为进程信息保存点
 	tsk = (struct task_struct *)Phy_To_Virt(p->PHY_address);
@@ -160,6 +160,7 @@ unsigned long do_fork(struct pt_regs * regs,
 	*tsk = *current;
 	// 链接自己，
 	list_init(&tsk->list);
+
 	// 将 tsk 加到初始进程前面，进程号增加
 	list_add_to_behind(&init_task_union.task.list,&tsk->list);	
 	tsk->pid++;

@@ -47,18 +47,31 @@ void init_interrupt()
 	io_out8(0xa1,0x01);
 
 	//只开启键盘中断
-	io_out8(0x21,0xfd);
+	io_out8(0x21,0xff);
 	io_out8(0xa1,0xff);
 
 	sti();
 }
 
+void Timer()
+{
+	static int clock = 0;
+	printf("Timer clock: %d\t", clock++);
+}
+
 void do_IRQ(unsigned long regs, unsigned long nr)
 {
-	unsigned char x;
-	printf_color(BLACK, RED, "do_IRQ:%08X\n", nr);
-	x = io_in8(0x60);
-	printf_color(BLACK, RED, "key code:%018X\n",x);
+	if (nr == 0x20)
+	{
+		Timer();
+	}
+	else
+	{
+		unsigned char x;
+		printf_color(BLACK, RED, "do_IRQ:%08X\n", nr);
+		x = io_in8(0x60);
+		printf_color(BLACK, RED, "key code:%018X\n",x);
+	}
 	io_out8(0x20,0x20);
 }
 

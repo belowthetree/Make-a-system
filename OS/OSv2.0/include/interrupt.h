@@ -64,6 +64,8 @@ void IRQ0x3f_interrupt();
 
 void (* interrupt[24])(void);
 
+void Timer();
+
 void init_interrupt();
 void do_IRQ(unsigned long regs, unsigned long nr);
 
