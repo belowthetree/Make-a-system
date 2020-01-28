@@ -224,8 +224,8 @@ void init_memory()
 		page_using_count,memory_management_struct.zones_struct->page_free_count);
 
 	// 清除页表，作者说法是不需要保留一致性页表映射，可能是为了避免访问内核？或者重新分配
-	//for(i = 0;i < 10;i++)
-	//	*(Phy_To_Virt(Global_CR3)  + i) = 0UL;
+	for(i = 0;i < 10;i++)
+		*(Phy_To_Virt(Global_CR3)  + i) = 0UL;
 	
 	flush_tlb();
 }
@@ -241,6 +241,62 @@ unsigned long page_init(struct Page * page,unsigned long flags)
 	}	
 	
 	return 1;
+}
+
+
+void pagetable_init()
+{
+	unsigned long i, j;
+	unsigned long *tmp = NULL;
+
+	Global_CR3 = Get_gdt();
+	// 查看页表存储地址
+	tmp = (unsigned long *)(((unsigned long)Phy_To_Virt(
+		(unsigned long)Global_CR3 & (~ 0xfffUL))) + 8 * 256);
+	printf_color(BLACK, YELLOW, "1:%018X, %018X\t\t\n", (unsigned long)tmp, *tmp);
+	tmp = Phy_To_Virt(*tmp & (~0xfffUL));
+	printf_color(BLACK, YELLOW, "2:%018X, %018X\t\t\n", (unsigned long)tmp, *tmp);
+	tmp = Phy_To_Virt(*tmp & (~0xfffUL));
+	printf_color(BLACK, YELLOW, "2:%018X, %018X\t\t\n", (unsigned long)tmp, *tmp);
+	// 将 ZONE_NORMAL_INDEX 区域内的物理页映射到线性空间内
+	for (i = 0;i < memory_management_struct.zones_size;i++)
+	{
+		struct Zone * z = memory_management_struct.zones_struct + i;
+		struct Page * p = z->pages_group;
+		if (ZONE_UNMAPED_INDEX && i== ZONE_UNMAPED_INDEX)
+			break;
+		// 为所有物理页建立三级页表项
+		for (j = 0;j < z->pages_length;j++, p++)
+		{
+			tmp = (unsigned long *)(((unsigned long)Phy_To_Virt((unsigned long)Global_CR3
+				& (~ 0xfffUL))) + (((unsigned long)Phy_To_Virt(p->PHY_address) 
+				>> PAGE_GDT_SHIFT) & 0x1ff) * 8);
+			
+			if (*tmp == 0)
+			{
+				unsigned long * virtual = kmalloc(PAGE_4K_SIZE, 0);
+				set_mpl4t(tmp, mk_mpl4t(Virt_To_Phy(virtual), PAGE_KERNEL_GDT));
+			}
+
+			tmp = (unsigned long *)((unsigned long)Phy_To_Virt(*tmp & (~ 0xfffUL)) +
+				(((unsigned long)Phy_To_Virt(p->PHY_address) >> PAGE_1G_SHIFT) & 0x1ff) * 8);
+			
+			if(*tmp == 0)
+			{
+				unsigned long * virtual = kmalloc(PAGE_4K_SIZE,0);
+				set_pdpt(tmp,mk_pdpt(Virt_To_Phy(virtual),PAGE_KERNEL_Dir));
+			}
+
+			tmp = (unsigned long *)((unsigned long)Phy_To_Virt(*tmp & (~ 0xfffUL)) +
+				(((unsigned long)Phy_To_Virt(p->PHY_address) >> PAGE_2M_SHIFT) & 0x1ff) * 8);
+
+			set_pdt(tmp,mk_pdt(p->PHY_address,PAGE_KERNEL_Page));
+
+			if(j % 50 == 0)
+				printf_color(BLACK, GREEN, "@:%018X,%018X\t\n",(unsigned long)tmp,*tmp);
+		}
+	}
+	flush_tlb();
 }
 
 unsigned long * Get_gdt()

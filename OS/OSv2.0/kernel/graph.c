@@ -21,3 +21,14 @@ void TranslateX(int x)
     Pos.XPosition %= Pos.XResolution;
     Pos.YPosition %= Pos.YResolution;
 }
+
+void frame_buffer_init()
+{
+    // 重新映射 VBE
+    unsigned long i;
+    unsigned long * tmp;
+    unsigned long * tmp1;
+    unsigned int * FB_addr = (unsigned int *)Phy_To_Virt(0xe0000000);
+
+    Global_CR3 = Get_gdt();
+}
