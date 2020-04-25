@@ -6,8 +6,8 @@
 megs: 32
 
 # filename of ROM images
-romimage: file=/usr/share/bochs/BIOS-bochs-latest
-vgaromimage:file=/usr/share/vgabios/vgabios.bin
+romimage: file="/usr/share/bochs/BIOS-bochs-latest"
+vgaromimage: file="/usr/share/bochs/VGABIOS-lgpl-latest"
 
 # what disk images will be used 
 floppya: 1_44=./img/boot.img, status=inserted
@@ -22,6 +22,6 @@ log: bochsout.txt
 mouse: enabled=0
 
 # enable key mapping, using US layout as default.
-keyboard_mapping: enabled=1, map=/usr/share/bochs/keymaps/x11-pc-us.map
+keyboard: enabled=1, map=/usr/share/bochs/keymaps/x11-pc-us.map
 
 megs: 2048

@@ -2,6 +2,7 @@
 #include "abnormal.h"
 #include "memory.h"
 #include "interrupt.h"
+#include "keyboard.h"
 
 struct Global_Memory_Descriptor memory_management_struct = {{0}, 0};
 
@@ -27,9 +28,11 @@ void Start_Kernel(void)
     printf_color(BLACK, RED, "HEHEHE\n\t%s%d", msg, -123);
 
     init_interrupt();
+
     // slab 内存池初始化
  //    printf_color(BLACK, RED, "slab init \n");
-	// slab_init();
+	slab_init();
+    keyboard_init();
 	
 	// printf_color(BLACK, WHITE, "kmalloc test\n");
 	// for(i = 0;i< 16;i++)

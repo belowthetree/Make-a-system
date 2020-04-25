@@ -224,8 +224,9 @@ void init_memory()
 		page_using_count,memory_management_struct.zones_struct->page_free_count);
 
 	// 清除页表，作者说法是不需要保留一致性页表映射，可能是为了避免访问内核？或者重新分配
-	for(i = 0;i < 10;i++)
-		*(Phy_To_Virt(Global_CR3)  + i) = 0UL;
+	// for(i = 0;i < 10;i++)
+	// 	*(Phy_To_Virt(Global_CR3)  + i) = 0UL;
+	// pagetable_init();
 	
 	flush_tlb();
 }
@@ -266,6 +267,7 @@ void pagetable_init()
 		if (ZONE_UNMAPED_INDEX && i== ZONE_UNMAPED_INDEX)
 			break;
 		// 为所有物理页建立三级页表项
+		printf("st %d\n", z->pages_length);
 		for (j = 0;j < z->pages_length;j++, p++)
 		{
 			tmp = (unsigned long *)(((unsigned long)Phy_To_Virt((unsigned long)Global_CR3
@@ -295,7 +297,10 @@ void pagetable_init()
 			if(j % 50 == 0)
 				printf_color(BLACK, GREEN, "@:%018X,%018X\t\n",(unsigned long)tmp,*tmp);
 		}
+		printf("init ");
 	}
+	printf("finish\n");
+	printf("init\n");
 	flush_tlb();
 }
 
@@ -1002,6 +1007,7 @@ void * kmalloc(unsigned long size,unsigned long gfp_flages)
 	// 如果当前 slab_cache 没用光
 	if(kmalloc_cache_size[i].total_free != 0)
 	{
+		printf("total free\n");
 		do
 		{	// 如果当前 slab 页内没有空余位置，寻找下一个 slab
 			if(slab->free_count == 0)
@@ -1012,6 +1018,7 @@ void * kmalloc(unsigned long size,unsigned long gfp_flages)
 	}
 	else
 	{	// 如果 slab_cache 用尽，申请新的 slab
+		printf("new slab\n");
 		slab = kmalloc_create(kmalloc_cache_size[i].size);
 		
 		if(slab == NULL)
@@ -1042,7 +1049,7 @@ void * kmalloc(unsigned long size,unsigned long gfp_flages)
 
 			kmalloc_cache_size[i].total_free--;
 			kmalloc_cache_size[i].total_using++;
-
+			printf("success\n");
 			return (void *)((char *)slab->Vaddress + kmalloc_cache_size[i].size * j);
 		}
 	}

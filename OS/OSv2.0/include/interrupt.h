@@ -68,6 +68,7 @@ void Timer();
 
 void init_interrupt();
 void do_IRQ(unsigned long regs, unsigned long nr);
+void register_irq(int num_irq, void * handler);
 
 void io_out8(unsigned short port,unsigned char value);
 void io_out32(unsigned short port,unsigned int value);

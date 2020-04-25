@@ -46,11 +46,17 @@ void init_interrupt()
 	io_out8(0xa1,0x02);
 	io_out8(0xa1,0x01);
 
-	//只开启键盘中断
-	io_out8(0x21,0xff);
-	io_out8(0xa1,0xff);
+	//只开启键盘中断|全部开启
+	io_out8(0x21,0xf9);
+	io_out8(0xa1,0xef);
+	// 此处会令系统重启，慎用
+	// io_out8(0x64, 0xfe);
 
 	sti();
+}
+
+void register_irq(int num_irq, void * handler){
+	interrupt[num_irq] = handler;
 }
 
 void Timer()
@@ -63,7 +69,11 @@ void do_IRQ(unsigned long regs, unsigned long nr)
 {
 	if (nr == 0x20)
 	{
-		Timer();
+		// Timer();
+		;
+	}
+	else if (interrupt[nr]){
+		interrupt[nr]();
 	}
 	else
 	{

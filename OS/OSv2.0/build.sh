@@ -12,4 +12,4 @@ sudo cp kernel.bin /media/
 sync
 sudo umount /media/
 
-bochs -f ./img/bochsrcq
+bochs -f ./img/bochsrc

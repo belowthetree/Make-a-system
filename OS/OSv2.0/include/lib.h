@@ -7,6 +7,8 @@
         const typeof( ((type *)0)->member ) *__mptr = (const typeof( ((type *)0)->member ) *)(ptr); \
         (type *)( (char *)__mptr - offsetof(type,member) );})
 
+#define nop() 		__asm__ __volatile__ ("nop	\n\t")
+
 // 用于链接各个 PCB
 struct List
 {
