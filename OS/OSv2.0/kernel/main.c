@@ -124,6 +124,6 @@ void Start_Kernel(void)
 	
     while(1){
         decode_keyboard();
-        decode_mouse();
+        // decode_mouse();
     }
 }
