@@ -29,6 +29,9 @@
 	"movq	%rdx,	%es;	\n\t"
 
 
+#define PIC1_OCW2		0x00a0
+#define PIC0_OCW2		0x0020
+
 void IRQ0x20_interrupt();
 void IRQ0x21_interrupt();
 void IRQ0x22_interrupt();

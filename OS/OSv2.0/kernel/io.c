@@ -19,9 +19,11 @@ void putchar_color(char c, uint32 BackColor, uint32 ForeColor)
         {
             tmp = tmp >> 1;
             if (font_ascii[c][i] & tmp)
-                Pos.FB_addr[y + Pos.XPosition + j] = (uint32)ForeColor;
+                SetPixel(Pos.XPosition + j, Pos.YPosition + i, (uint32)ForeColor);
+                // Pos.FB_addr[y + Pos.XPosition + j] = (uint32)ForeColor;
             else
-                Pos.FB_addr[y + Pos.XPosition + j] = (uint32)BackColor;
+                SetPixel(Pos.XPosition + j, Pos.YPosition + i, (uint32)BackColor);
+                // Pos.FB_addr[y + Pos.XPosition + j] = (uint32)BackColor;
         }
     }
     TranslateX(Pos.XCharSize);

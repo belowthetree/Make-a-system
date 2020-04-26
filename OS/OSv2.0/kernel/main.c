@@ -3,6 +3,7 @@
 #include "memory.h"
 #include "interrupt.h"
 #include "keyboard.h"
+#include "mouse.h"
 
 struct Global_Memory_Descriptor memory_management_struct = {{0}, 0};
 
@@ -33,6 +34,7 @@ void Start_Kernel(void)
  //    printf_color(BLACK, RED, "slab init \n");
 	slab_init();
     keyboard_init();
+    mouse_init();
 	
 	// printf_color(BLACK, WHITE, "kmalloc test\n");
 	// for(i = 0;i< 16;i++)
@@ -118,8 +120,10 @@ void Start_Kernel(void)
 	// 		(memory_management_struct.zones_struct + ZONE_UNMAPED_INDEX)->page_using_count,
 	// 		(memory_management_struct.zones_struct + ZONE_UNMAPED_INDEX)->page_free_count );
 
-    init_process();
-
-	while(1)
-		;
+    // init_process();
+	
+    while(1){
+        decode_keyboard();
+        decode_mouse();
+    }
 }

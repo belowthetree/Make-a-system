@@ -1,6 +1,17 @@
 #include "graph.h"
 #include "memory.h"
 
+void SetPixel(int x, int y, uint32 color){
+    if (y >= Pos.YResolution || x >= Pos.XResolution || x < 0 || y < 0)
+        return;
+    int yy = Pos.XResolution * y;
+    Pos.FB_addr[yy + x] = color;
+}
+
+uint32 GetPixel(int x, int y){
+    return Pos.FB_addr[y * Pos.XResolution + x];
+}
+
 void InitGraph(uint32 *addr)
 {
     Pos.FB_addr = addr;

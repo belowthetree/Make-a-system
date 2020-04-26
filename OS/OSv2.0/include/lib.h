@@ -1,5 +1,6 @@
 #ifndef _LIB_H
 #define _LIB_H
+#include "type.h"
 
 #define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE*)0)->MEMBER)
 

@@ -1,6 +1,6 @@
-#include "type.h"
 #ifndef _GRAPH_H
 #define _GRAPH_H
+#include "type.h"
 
 #define WHITE 	0x00ffffff		//白
 #define BLACK 	0x00000000		//黑
@@ -29,5 +29,8 @@ struct position{
 
 void InitGraph(uint32 *addr);
 void TranslateX(int x);
+
+void SetPixel(int x, int y, uint32 color);
+uint32 GetPixel(int x, int y);
 
 #endif
