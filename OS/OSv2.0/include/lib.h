@@ -10,6 +10,9 @@
 
 #define nop() 		__asm__ __volatile__ ("nop	\n\t")
 
+#define port_insw(port,buffer,nr)	\
+__asm__ __volatile__("cld;rep;insw;mfence;"::"d"(port),"D"(buffer),"c"(nr):"memory")
+
 // 用于链接各个 PCB
 struct List
 {

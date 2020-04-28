@@ -4,6 +4,7 @@
 #include "interrupt.h"
 #include "keyboard.h"
 #include "mouse.h"
+#include "disk.h"
 
 struct Global_Memory_Descriptor memory_management_struct = {{0}, 0};
 
@@ -35,6 +36,7 @@ void Start_Kernel(void)
 	slab_init();
     keyboard_init();
     mouse_init();
+    disk_init();
 	
 	// printf_color(BLACK, WHITE, "kmalloc test\n");
 	// for(i = 0;i< 16;i++)
