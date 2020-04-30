@@ -67,7 +67,7 @@ Label_Start:
     out     92h, al
 
     cli
-;   加载 gdt 并进入实模式
+;   加载 gdt 并进入保护模式
     db  0x66
     lgdt    [GdtPtr]
     mov     eax, cr0
@@ -126,7 +126,7 @@ Label_Protect:
     test    eax, eax
 
     jz      no_support
-;   配置分页
+;   配置分页 1 0000 0000
 	mov	dword	[0x90000],	0x91007
 	mov	dword	[0x90800],	0x91007		
 
