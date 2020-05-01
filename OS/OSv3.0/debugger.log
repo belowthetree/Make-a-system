@@ -1,7 +1,24 @@
 Next at t=0
 (0) [0x0000fffffff0] f000:fff0 (unk. ctxt): jmpf 0xf000:e05b          ; ea5be000f0
 c
-Next at t=54758281
-(0) [0x000000102054] 0008:0000000000102054 (unk. ctxt): jmp .-2 (0x0000000000102054) ; ebfe
+Next at t=51361343
+(0) [0x0000001020be] 0008:00000000001020be (unk. ctxt): jmp .-2 (0x00000000001020be) ; ebfe
+sreg
+es:0x0010, dh=0x00009300, dl=0x00000000, valid=1
+	Data segment, base=0x00000000, limit=0x00000000, Read/Write, Accessed
+cs:0x0008, dh=0x00209900, dl=0x00000000, valid=1
+	Code segment, base=0x00000000, limit=0x00000000, Execute-Only, Non-Conforming, Accessed, 64-bit
+ss:0x0010, dh=0x00009300, dl=0x00000000, valid=1
+	Data segment, base=0x00000000, limit=0x00000000, Read/Write, Accessed
+ds:0x0010, dh=0x00009300, dl=0x00000000, valid=1
+	Data segment, base=0x00000000, limit=0x00000000, Read/Write, Accessed
+fs:0x0010, dh=0x00009300, dl=0x00000000, valid=1
+	Data segment, base=0x00000000, limit=0x00000000, Read/Write, Accessed
+gs:0x0010, dh=0x00009300, dl=0x00000000, valid=1
+	Data segment, base=0x00000000, limit=0x00000000, Read/Write, Accessed
+ldtr:0x0000, dh=0x00008200, dl=0x0000ffff, valid=1
+tr:0x0000, dh=0x00008b00, dl=0x0000ffff, valid=1
+gdtr:base=0xffff800000030000, limit=0x9f
+idtr:base=0xffff800000040000, limit=0xfff
 q
-(0).[54758281] [0x000000102054] 0008:0000000000102054 (unk. ctxt): jmp .-2 (0x0000000000102054) ; ebfe
+(0).[51361343] [0x0000001020be] 0008:00000000001020be (unk. ctxt): jmp .-2 (0x00000000001020be) ; ebfe

@@ -15,4 +15,4 @@ sudo cp kernel.bin /mnt/
 sync
 sudo umount /mnt/
 
-# bochs -f ./img/bochsrc
+bochs -f ./img/bochsrc

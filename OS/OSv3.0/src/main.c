@@ -1,14 +1,18 @@
 #include "io.h"
 #include "graph.h"
-#include "interrupt.h"
-#include "abnormal.h"
+#include "descripter.h"
 
 void main(){
-	InitGraph(0xffff800000a00000);
-	
+	InitGraph((unsigned int*)0xffff800000a00000);
+	InitDescripter();
+
 	printf("into c's kernel\n");
-	InitAbnormal();
-	
+	// set_tss64(0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
+ //     0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
+ //     0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
+ //     0xffff800000007c00);
+	// InitAbnormal();
+	// int i = 1 / 0;
 	while(1)
 		;
 }

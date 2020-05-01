@@ -14,12 +14,15 @@ struct POINTER{
 	unsigned long* addr;
 }IDT_Pointer;
 
+extern unsigned int TSS64_Table[26];
+
 struct GATE* IDT_Table;
 
 void InitAbnormal();
 void LIDT(unsigned long* addr);
 
-
+void set_tss64(unsigned long rsp0,unsigned long rsp1,unsigned long rsp2,unsigned long ist1,unsigned long ist2,unsigned long ist3,
+unsigned long ist4,unsigned long ist5,unsigned long ist6,unsigned long ist7);
 
 void SolveErrorInt(unsigned long rsp, unsigned long error_code);
 

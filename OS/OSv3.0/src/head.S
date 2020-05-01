@@ -10,8 +10,12 @@ _start:
 	mov %ax, %ss
 	mov %ax, %es
 	mov %ax, %gs
-	mov $0x7c00, %esp
+	mov TEST(%rip), %rax
+	mov $0xffff800000007c00, %rsp
+	mov %rsp, %rbp
 
+TEST:
+	.quad 0x10000
 	# movq %rax, (0x10000)
 	# movq $0x14003, (0x12000)
 

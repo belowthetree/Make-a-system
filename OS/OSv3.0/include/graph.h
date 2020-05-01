@@ -18,7 +18,7 @@ struct SCREEN{
 	unsigned int* FB_addr;
 } Pos;
 
-void InitGraph(unsigned long* vbe_addr);
+void InitGraph(unsigned int* addr);
 void TranslateX(int x);
 unsigned long GetPixel(int x, int y);
 void SetPixel(int x, int y, unsigned long color);

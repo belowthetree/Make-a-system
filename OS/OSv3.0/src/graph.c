@@ -11,7 +11,7 @@ unsigned long GetPixel(int x, int y){
     return Pos.FB_addr[y * Pos.XResolution + x];
 }
 
-void InitGraph(unsigned long *addr)
+void InitGraph(unsigned int *addr)
 {
     Pos.FB_addr = addr;
     Pos.XPosition = Pos.YPosition = 0;
