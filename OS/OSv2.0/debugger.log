@@ -1,0 +1,7 @@
+Next at t=0
+(0) [0x0000fffffff0] f000:fff0 (unk. ctxt): jmpf 0xf000:e05b          ; ea5be000f0
+c
+Next at t=65770485
+(0) [0x000000108e78] 0008:ffff800000108e78 (unk. ctxt): mov edx, dword ptr ss:[rbp-20] ; 8b55ec
+q
+(0).[65770485] [0x000000108e78] 0008:ffff800000108e78 (unk. ctxt): mov edx, dword ptr ss:[rbp-20] ; 8b55ec
