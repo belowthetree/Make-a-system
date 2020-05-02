@@ -118,6 +118,7 @@ unsigned long ist4,unsigned long ist5,unsigned long ist6,unsigned long ist7)
 	*(unsigned long *)(TSS64_Table+17) = ist5;
 	*(unsigned long *)(TSS64_Table+19) = ist6;
 	*(unsigned long *)(TSS64_Table+21) = ist7;	
+	printf("%ux %ux\n",GDT_Table, (GDT_Table + 10));
 }
 
 void do_invalid_TSS(uint64 rsp, uint64 error_code)

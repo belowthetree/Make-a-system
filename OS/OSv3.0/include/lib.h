@@ -2,7 +2,8 @@
 #define LIB_H
 
 #define sti() 		__asm__ __volatile__ ("sti	\n\t":::"memory")
-
+#define hlt()		__asm__ __volatile__ ("hlt	\n\t":::"memory")
+#define cli()		__asm__ __volatile__ ("cli	\n\t":::"memory")
 
 void io_out8(unsigned short port,unsigned char value);
 void io_out32(unsigned short port,unsigned int value);
@@ -21,9 +22,9 @@ do{									\
 #define load_gdtr(limit, addr)\
 do{\
 	__asm__ __volatile__(\
-		"movw %%ax, (%%rsp)\n\t"\
-		"movq %%rbx, 2(%%rsp)\n\t"\
-		"lgdt (%%rsp)"\
+		"movw %%ax, -10(%%rsp)\n\t"\
+		"movq %%rbx, -8(%%rsp)\n\t"\
+		"lgdt -10(%%rsp)"\
 		:\
 		:"a"(limit)\
 		,"b"(addr)\
@@ -33,9 +34,9 @@ do{\
 #define load_idtr(limit, addr)\
 do{\
 	__asm__ __volatile__(\
-		"movw %%ax, (%%rsp)\n\t"\
-		"movq %%rbx, 2(%%rsp)\n\t"\
-		"lidt (%%rsp)"\
+		"movw %%ax, -10(%%rsp)\n\t"\
+		"movq %%rbx, -8(%%rsp)\n\t"\
+		"lidt -10(%%rsp)"\
 		:\
 		:"a"(limit)\
 		,"b"(addr)\
