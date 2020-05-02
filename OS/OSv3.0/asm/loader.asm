@@ -38,6 +38,22 @@ SelectorCode64  equ CODEBASE64 - GDTBASE64
 SelectorData64  equ DATABASE64 - GDTBASE64
 
 Start_Loader:
+    mov di, 0x7c00
+    mov bx, 0
+    mov ax, 0
+    mov es, ax
+    ; 获取内存信息
+check_memory:
+    mov ax, 0xe820
+    mov cx, 20
+    mov edx, 0x534d4150
+    int 0x15
+
+    mov ax, 20
+    add di, ax
+    cmp bx, 0
+    jnz check_memory
+
     ; 设置显示模式
     mov ax, 0x4f02
     mov bx, 0x4180
