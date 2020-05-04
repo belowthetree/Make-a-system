@@ -11,9 +11,9 @@ void main(){
 	InitTrap();
 	InitInterrupt();
 	InitMemory();
-	// printf("%ux\n", main);
 
-	// int i = 1 / 0;
+	
+
 	printf("into C's kernel\n");
 	while(1)
 		;

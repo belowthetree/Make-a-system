@@ -101,12 +101,6 @@ Start_Code32:
     mov dword [0x92028], 0xe0000083
     mov dword [0x92030], 0xe0200083
     mov dword [0x92038], 0xe0400083
-    mov dword [0x92040], 0xe0600083
-    mov dword [0x92048], 0xe0800083
-    mov dword [0x92050], 0xe0a00083
-    mov dword [0x92058], 0xe0c00083
-    mov dword [0x92060], 0xe0e00083
-    mov dword [0x92068], 0xe1000083
 
     ; 加载 64 位 GDT
     db 0x66
