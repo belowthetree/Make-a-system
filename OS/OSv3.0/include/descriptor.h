@@ -68,6 +68,8 @@ void set_trap_gate(int n, int ist, void* func);
 void set_tss(uint64 rsp0, uint64 rsp1, uint64 rsp2, uint64 ist1, uint64 ist2, uint64 ist3, 
 	uint64 ist4, uint64 ist5, uint64 ist6, uint64 ist7);
 
+void set_tss_at(int n, uint64 rsp);
+
 
 
 

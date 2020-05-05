@@ -31,9 +31,10 @@
 
 void disk_init();
 void disk_handler();
+void read_one_sector(int n, unsigned char* cx);
 
 
-
+char finish;
 
 
 

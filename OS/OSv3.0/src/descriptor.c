@@ -29,10 +29,38 @@ void InitDescripter(){
 	load_idtr(IDT_Pointer.limit, IDT_Pointer.addr);
 
 	set_tss(0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,
-     0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
-     0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 
-     0xffff800000007c00);
+     0xffff800000008e00, 0xffff800000008e00, 0xffff800000008e00, 
+     0xffff800000008e00, 0xffff800000008e00, 0xffff800000008e00, 
+     0xffff800000008e00);
 	load_TR(10);
+}
+
+void set_tss_at(int n, uint64 rsp){
+	switch (n){
+		case 1:
+			TSS_Table.ist1 = rsp;
+			break;
+		case 2:
+			TSS_Table.ist2 = rsp;
+			break;
+		case 3:
+			TSS_Table.ist3 = rsp;
+			break;
+		case 4:
+			TSS_Table.ist4 = rsp;
+			break;
+		case 5:
+			TSS_Table.ist5 = rsp;
+			break;
+		case 6:
+			TSS_Table.ist6 = rsp;
+			break;
+		case 7:
+			TSS_Table.ist7 = rsp;
+			break;
+		default:
+			printf_color(BLACK, RED, "set tss num error %d\n", n);
+	}
 }
 
 void set_tss(uint64 rsp0, uint64 rsp1, uint64 rsp2, uint64 ist1, uint64 ist2, uint64 ist3, 

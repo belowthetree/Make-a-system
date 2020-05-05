@@ -6,6 +6,7 @@
 #define PIC0_OCW2		0x0020
 
 void InitInterrupt();
+void register_irq(int num_irq, void * handler);
 
 void do_IRQ();
 

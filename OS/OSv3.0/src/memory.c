@@ -46,6 +46,7 @@ void init_page(){
 	struct PAGE* page = (struct PAGE*)(bit_start + memory_manager.map_len);
 	memory_manager.pages = page;
 	unsigned long i;
+	printf_color(BLACK, INDIGO, "bit_start at %ux\n", (unsigned long)bit_start);
 
 	// 内核代码部分标志为已用
 	memset(memory_manager.bitmap, 0, memory_manager.map_len);
@@ -74,6 +75,7 @@ void init_page(){
 		}
 		pre = memory_manager.area[i]->end & PAGE_2M_MASK;
 	}
+	printf_color(BLACK, GREEN, "page end at %ux\n", &memory_manager.pages[memory_manager.free_page]);
 }
 
 // 记录 BIOS 查找到的内存信息
@@ -108,7 +110,9 @@ void search_memory(){
 		else if (p->type > 4 || p->type < 1)
 			break;
 		p++;
+		area++;
 	}
+	// printf_color(BLACK,GREEN, "area end at %ux\n", area);
 	// 计算位图长度，页表起始地址
 	memory_manager.map_len = (memory_manager.total_page + 63) / 8;
 	memory_manager.bitmap = (unsigned char *)MAPBASE;
@@ -131,8 +135,8 @@ struct PAGE* use_page(int n, unsigned long attr){
 	memory_manager.pages[n].attr = attr;
 	memory_manager.bitmap[n / 8] |= (unsigned char)(1 << (n % 8));
 
-	// printf("use page %d, start at %ux bitmap %ux\n", n, memory_manager.pages[n].virtual_addr, 
-	// 	memory_manager.bitmap[n / 8]);
+	printf("use page %d, start at %ux bitmap %ux\n", n, memory_manager.pages[n].virtual_addr, 
+		memory_manager.bitmap[n / 8]);
 	return &memory_manager.pages[n];
 }
 
@@ -184,6 +188,7 @@ void init_slab(){
 		Slab_cache[i].size = size;
 		Slab_cache[i].free_slab = 0;
 		Slab_cache[i].used_slab = 0;
+		Slab_cache[i].cache_pool = 0;
 		size *= 2;
 	}
 }
@@ -192,7 +197,7 @@ unsigned long kmalloc(int size){
 	int i, level = 32;
 	for (i = 0;i < 16;i++){
 		if (level >= size){
-			// printf_color(BLACK, GREEN, "find level:%d, idx: %d\n", level, i);
+			printf_color(BLACK, GREEN, "find level:%d, idx: %d\n", level, i);
 			return alloc_slab(i, level);
 		}
 		level *= 2;

@@ -31,49 +31,49 @@ void SystemTrap(unsigned long rsp, unsigned long error_code)
 {
 	unsigned long * p = (unsigned long *)(rsp + 0x98);
 	if (error_code == 0)
-		printf("#DE divide_error(0), RSP:%uX 	RIP:%uX\n", rsp, *p);
+		printf("#DE divide_error(0), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 1)
-		printf("#DB debug_error(1), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#DB debug_error(1), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 2)
-		printf("-- nmi_error(2), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("-- nmi_error(2), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 3)
-		printf("#BP INT3(3), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#BP INT3(3), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 4)
-		printf("#OF overflow(4), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#OF overflow(4), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 5)
-		printf("#BR bound_error(5), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#BR bound_error(5), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 6)
-		printf("#UD undefine_code(6), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#UD undefine_code(6), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 7)
-		printf("#NM FPU_missing(7), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#NM FPU_missing(7), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 8)
-		printf("#DF double_error(8), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#DF double_error(8), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 9)
-		printf("-- xiechuliqiyuejie(9), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("-- xiechuliqiyuejie(9), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if (error_code == 10)
-		printf("#TS invalid_TSS(10), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#TS invalid_TSS(10), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 11)
-		printf("#NP desc_missing(11), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#NP desc_missing(11), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 12)
-		printf("#SS SS_error(12), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#SS SS_error(12), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 13)
-		printf("#GP general_protection(13), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#GP general_protection(13), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 14)
-		printf("#PF page_error(14), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#PF page_error(14), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	// else if(error_code == 15)	Intel 保留
-	// 	printf("#DB debug_error(15), RSP:%X 	RIP:%X\n", rsp, *p);
+	// 	printf("#DB debug_error(15), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 16)
-		printf("#MF x87 FPU_error_compute_error(16), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#MF x87 FPU_error_compute_error(16), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 17)
-		printf("#AC alignment_check(17), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#AC alignment_check(17), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 18)
-		printf("#MC machine_check(18), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#MC machine_check(18), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 19)
-		printf("#XM SIMD_exception(19), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#XM SIMD_exception(19), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else if(error_code == 20)
-		printf("#VE virtualization_exception(20), RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("#VE virtualization_exception(20), RSP:%ux 	RIP:%ux\n", rsp, *p);
 	else
-		printf("unknown error, RSP:%X 	RIP:%X\n", rsp, *p);
+		printf("unknown error, RSP:%ux 	RIP:%ux\n", rsp, *p);
 	while(1);
 }
 
@@ -82,7 +82,7 @@ void do_invalid_TSS(uint64 rsp, uint64 error_code)
 {
 	uint64 *p = (uint64 *)(rsp + 0x98);
 
-	printf_color(BLACK, RED, "do_invalid_TSS(10),ERROR_CODE:%X,RSP:%X,RIP:%X\n",error_code , rsp , *p);
+	printf_color(BLACK, RED, "do_invalid_TSS(10),ERROR_CODE:%ux,RSP:%ux,RIP:%ux\n",error_code , rsp , *p);
 
 	if(error_code & 0x01)
 		printf_color(BLACK, RED, "The exception occurred during \
@@ -113,7 +113,7 @@ void do_page_fault(uint64 rsp,uint64 error_code)
 	__asm__	__volatile__("movq	%%cr2,	%0":"=r"(cr2)::"memory");
 
 	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_page_fault(14),ERROR_CODE: %X,RSP: %X,RIP: %X\n",error_code , rsp , *p);
+	printf_color(BLACK, RED, "do_page_fault(14),ERROR_CODE: %ux,RSP: %ux,RIP: %ux\n",error_code , rsp , *p);
 
 	if(!(error_code & 0x01))
 		printf_color(BLACK, RED, "Page Not-Present,\t");
@@ -136,7 +136,7 @@ void do_page_fault(uint64 rsp,uint64 error_code)
 
 	printf_color(BLACK, RED, "\n");
 
-	printf_color(BLACK, RED, "CR2: %X\n",cr2);
+	printf_color(BLACK, RED, "CR2: %ux\n",cr2);
 
 	while(1);
 }
@@ -145,7 +145,7 @@ void do_nmi(unsigned long rsp,unsigned long error_code)
 {
 	unsigned long * p = NULL;
 	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_nmi(2),ERROR_CODE:%X,RSP:%X,RIP:%X\n",error_code , rsp , *p);
+	printf_color(BLACK, RED, "do_nmi(2),ERROR_CODE:%ux,RSP:%ux,RIP:%ux\n",error_code , rsp , *p);
 	while(1);
 }
 
@@ -194,7 +194,7 @@ void do_general_protection(unsigned long rsp,unsigned long error_code)
 {
 	unsigned long * p = NULL;
 	p = (unsigned long *)(rsp + 0x98);
-	printf_color(BLACK, RED, "do_general_protection(13),ERROR_CODE:%X,RSP:%X,RIP:%X\n",error_code , rsp , *p);
+	printf_color(BLACK, RED, "do_general_protection(13),ERROR_CODE:%ux,RSP:%ux,RIP:%ux\n",error_code , rsp , *p);
 
 	if(error_code & 0x01)
 		printf_color(BLACK, RED, "The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");

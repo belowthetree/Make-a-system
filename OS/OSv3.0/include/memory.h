@@ -9,7 +9,7 @@
 #define PAGE_OFFSET 	((unsigned long)BASE)
 
 #define AREABASE 0xffff800000000000
-#define MAPBASE  0xffff800000000100
+#define MAPBASE  0xffff800000000200
 #define AREASIZE 10
 
 int AREANUM;

@@ -258,7 +258,7 @@ void pagetable_init()
 	tmp = Phy_To_Virt(*tmp & (~0xfffUL));
 	printf_color(BLACK, YELLOW, "2:%018X, %018X\t\t\n", (unsigned long)tmp, *tmp);
 	tmp = Phy_To_Virt(*tmp & (~0xfffUL));
-	printf_color(BLACK, YELLOW, "2:%018X, %018X\t\t\n", (unsigned long)tmp, *tmp);
+	printf_color(BLACK, YELLOW, "3:%018X, %018X\t\t\n", (unsigned long)tmp, *tmp);
 	// 将 ZONE_NORMAL_INDEX 区域内的物理页映射到线性空间内
 	for (i = 0;i < memory_management_struct.zones_size;i++)
 	{

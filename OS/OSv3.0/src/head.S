@@ -11,5 +11,17 @@ _start:
 	mov %ax, %ss
 	mov %ax, %es
 	mov %ax, %gs
+	movq	EndOfStack(%rip),	%rsp
 	
-	jmp main
+	movq	go_to_kernel(%rip),	%rax		/* movq address */
+	pushq	$0x08
+	pushq	%rax
+	lretq
+
+go_to_kernel:
+	.quad	main
+
+ENTRY(_stack_start)
+	.fill	2048, 1, 0
+EndOfStack:
+	.quad   _stack_start + 2048
