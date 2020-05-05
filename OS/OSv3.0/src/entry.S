@@ -48,10 +48,14 @@ RESTORE_ALL:
 	addq	$0x10,	%rsp;
 	iretq;
 
-#define GET_CURRENT(reg)	\
-	movq	$-32768,reg;	\
-	andq	%rsp,	reg
+# #define GET_CURRENT(reg)	\
+# 	movq	$-32768,reg;	\
+# 	andq	%rsp,	reg
 
+ret_from_exception:
+	/*GET_CURRENT(%ebx)	need rewrite*/
+ENTRY(ret_from_intr)
+	jmp	RESTORE_ALL	/*need rewrite*/
 
 
 ENTRY(divide_error)
@@ -60,7 +64,6 @@ ENTRY(divide_error)
 	leaq	SystemTrap(%rip),	%rax
 	xchgq	%rax,	(%rsp)
 
-// 系统错误现场保存
 error_code:
 	pushq	%rax
 	movq	%es,	%rax
@@ -93,10 +96,11 @@ error_code:
 	movq	%rdi,	%es
 
 	movq	%rsp,	%rdi
+	////GET_CURRENT(%ebx)
 
 	callq 	*%rdx
 
-	jmp	RESTORE_ALL	
+	jmp	ret_from_exception	
 
 ENTRY(debug)
 	pushq	$1
@@ -256,37 +260,37 @@ ENTRY(virtualization_exception)
 	xchgq	%rax,	(%rsp)
 	jmp	error_code
 
-ENTRY(system_call)
-	sti
-	subq	$0x38,	%rsp			 
-	cld;					 
+# ENTRY(system_call)
+# 	sti
+# 	subq	$0x38,	%rsp			 
+# 	cld;					 
 
-	pushq	%rax;				 	
-	movq	%es,	%rax;			 	
-	pushq	%rax;				 	
-	movq	%ds,	%rax;			 	
-	pushq	%rax;				 	
-	xorq	%rax,	%rax;			 	
-	pushq	%rbp;				 	
-	pushq	%rdi;				 	
-	pushq	%rsi;				 	
-	pushq	%rdx;				 	
-	pushq	%rcx;				 
-	pushq	%rbx;				 	
-	pushq	%r8;				 	
-	pushq	%r9;				 	
-	pushq	%r10;				 
-	pushq	%r11;				 
-	pushq	%r12;				 	
-	pushq	%r13;				 
-	pushq	%r14;				 	
-	pushq	%r15;				 	
-	movq	$0x10,	%rdx;			 	
-	movq	%rdx,	%ds;			 	
-	movq	%rdx,	%es;			 
-	movq	%rsp,	%rdi			 	
+# 	pushq	%rax;				 	
+# 	movq	%es,	%rax;			 	
+# 	pushq	%rax;				 	
+# 	movq	%ds,	%rax;			 	
+# 	pushq	%rax;				 	
+# 	xorq	%rax,	%rax;			 	
+# 	pushq	%rbp;				 	
+# 	pushq	%rdi;				 	
+# 	pushq	%rsi;				 	
+# 	pushq	%rdx;				 	
+# 	pushq	%rcx;				 
+# 	pushq	%rbx;				 	
+# 	pushq	%r8;				 	
+# 	pushq	%r9;				 	
+# 	pushq	%r10;				 
+# 	pushq	%r11;				 
+# 	pushq	%r12;				 	
+# 	pushq	%r13;				 
+# 	pushq	%r14;				 	
+# 	pushq	%r15;				 	
+# 	movq	$0x10,	%rdx;			 	
+# 	movq	%rdx,	%ds;			 	
+# 	movq	%rdx,	%es;			 
+# 	movq	%rsp,	%rdi			 	
 			
-	# callq	system_call_function
+# 	callq	system_call_function
 
 ENTRY(ret_system_call)			
 	movq	%rax,	0x80(%rsp)		 
@@ -313,8 +317,8 @@ ENTRY(ret_system_call)
 	.byte	0x48
 	sysexit
 
-//  中断触发现场保存
 int_code:
+	cli
 	pushq	%rax
 	movq	%es,	%rax
 	pushq	%rax
@@ -350,7 +354,7 @@ int_code:
 
 	callq 	*%rdx
 
-	jmp	RESTORE_ALL
+	jmp	ret_from_exception
 
 ENTRY(IRQ0x20_interrupt)
 	pushq	$0x20

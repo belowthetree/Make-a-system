@@ -42,7 +42,7 @@ void IRQ0x3d_interrupt();
 void IRQ0x3e_interrupt();
 void IRQ0x3f_interrupt();
 
-
+void system_call_function();
 
 
 

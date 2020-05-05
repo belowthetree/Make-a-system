@@ -65,6 +65,8 @@ struct MEMORY_MGR{
 
 
 void InitMemory();
+unsigned long kmalloc(int size);
+void kfree(unsigned long addr);
 
 
 

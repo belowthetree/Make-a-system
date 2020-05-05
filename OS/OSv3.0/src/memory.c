@@ -13,8 +13,6 @@ struct PAGE* alloc_page(unsigned long attr);
 struct PAGE* use_page(int n, unsigned long attr);
 
 void init_slab();
-unsigned long kmalloc(int size);
-void kfree(unsigned long addr);
 unsigned long alloc_slab(int i, int size);
 struct SLAB* create_slab(int size);
 
@@ -26,7 +24,7 @@ void InitMemory(){
 	init_page();
 	init_slab();
 
-	int i;
+	// int i;
 	// for (i = 0;i < 16;i++){
 	// 	struct PAGE* page = alloc_page(PAGE_KERNEL_PAGE);
 	// 	printf("phy: %ux virt: %ux attr: %ux\n", page->physical_addr, page->virtual_addr, page->attr);
@@ -34,13 +32,13 @@ void InitMemory(){
 	// }
 
 	// while(1);
-	int size = 15;
-	for (i = 0;i < 16;i++){
-		unsigned long addr = kmalloc(size);
-		size += 30;
-		printf("addr : %ux\n", addr);
-		kfree(addr);
-	}
+	// int size = 15;
+	// for (i = 0;i < 16;i++){
+	// 	unsigned long addr = kmalloc(size);
+	// 	size += 30;
+	// 	printf("addr : %ux\n", addr);
+	// 	kfree(addr);
+	// }
 }
 
 void init_page(){
@@ -95,7 +93,6 @@ void search_memory(){
 			p->addr, p->len, p->type);
 		if (p->type == 1){
 			// 记录可用区域信息
-			area = (struct AREA *)Phy_To_Virt(p->addr);
 			area->physical_addr = PAGE_2M_ALIGN(p->addr);
 			area->virtual_addr = Phy_To_Virt(area->physical_addr);
 			area->free_page = (p->len + PAGE_2M_ALIGN(p->addr) - p->addr) / PAGE_2M_SIZE;

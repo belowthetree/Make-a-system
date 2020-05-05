@@ -55,7 +55,7 @@ void InitInterrupt()
 	io_out8(0xa1,0x01);
 
 	//只开启键盘中断|全部开启
-	io_out8(0x21,0xff);
+	io_out8(0x21,0xfd);
 	io_out8(0xa1,0xff);
 	// 此处会令系统重启，慎用
 	// io_out8(0x64, 0xfe);
@@ -76,19 +76,19 @@ void Timer()
 void do_IRQ(unsigned long regs, unsigned long nr)
 {
 	nr -= 0x20;
-	if (do_int[nr]){
-		do_int[nr]();
-	}
-	else
+	// if (do_int[nr]){
+	// 	do_int[nr]();
+	// }
+	// else
 	{
 		unsigned char x;
 		printf_color(BLACK, RED, "do_IRQ:%08X\n", nr);
 		x = io_in8(0x60);
 		printf_color(BLACK, RED, "key code:%018X\n",x);
 	}
-	io_out8(PIC1_OCW2, 0x64);	/* 通知PIC IRQ-12 已经受理完毕 */
-	io_out8(PIC0_OCW2, 0x62);	/* 通知PIC IRQ-02 已经受理完毕 */
+//	io_out8(PIC1_OCW2, 0x64);	/* 通知PIC IRQ-12 已经受理完毕 */
+//	io_out8(PIC0_OCW2, 0x62);	/* 通知PIC IRQ-02 已经受理完毕 */
 	io_out8(0x20,0x20);
-	printf("exit\n");
+	// while(1);
 }
 
