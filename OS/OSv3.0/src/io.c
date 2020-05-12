@@ -3,6 +3,17 @@
 #include "graph.h"
 #include <stdarg.h>
 
+char getchar(){
+    return input_buffer[tail++];
+}
+
+void getstr(char* str, int n){
+    int i = 0;
+    while (i < n && input_buffer[tail] != '\0' && input_buffer[tail] != '\n' && input_buffer[tail] != 0){
+        str[i] = input_buffer[tail++];
+    }
+}
+
 void putchar(char c)
 {
     putchar_color(c, BLACK, WHITE);
@@ -11,6 +22,12 @@ void putchar(char c)
 void putchar_color(char c, uint32 BackColor, uint32 ForeColor)
 {
     int i, j;
+    if (c == '\n'){
+        Pos.YPosition += Pos.YCharSize;
+        Pos.XPosition = 0;
+        Pos.YPosition %= Pos.YResolution;
+        return;
+    }
     for (i = 0;i < 16;i++)
     {
         int tmp = 0x100;
@@ -450,6 +467,15 @@ void putux(unsigned long n, int isuper, int align, int zero)
 
 void memset(void *str, unsigned char c, long size)
 {
+    // __asm__ __volatile__(
+    //     ".p:"
+    //     "movb %%al, (%%rdi)\n\t"
+    //     "inc %%rdi\n\t"
+    //     "dec %%rcx\n\t"
+    //     "cmp %%rcx, 0\n\t"
+    //     "jnz .p\n\t"
+    //     :
+    //     :"D"(str), "a"(c), "c"(size));
     unsigned char * s = (unsigned char *)str;
     long i = 0;
     while(i<size)

@@ -62,6 +62,7 @@ void mouse_init(){
 
 	wait_KB_write();
 	io_out8(PORT_KB_CMD,KBCMD_EN_MOUSE_INTFACE);
+	printf_color(BLACK, GREEN, "Finish\n");
 
 	int i, j;
 	for(i = 0;i<1000;i++)

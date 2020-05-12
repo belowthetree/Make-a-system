@@ -25,7 +25,7 @@ struct keyboard_inputbuffer
 #define wait_KB_write() while(io_in8(PORT_KB_STATUS) & KBSTATUS_IBF)
 #define wait_KB_read() while(io_in8(PORT_KB_STATUS) & KBSTATUS_OBF)
 
-void keyboard_init();
+void InitKeyboard();
 void keyboard_handler();
 // void mouse_handler();
 unsigned char get_scancode();
@@ -89,6 +89,14 @@ enum keyboardmap
 	BDOWN,
 	NDOWN,
 	MDOWN,
+	COMMADOWN,
+	DOTDOWN,
+	SLASHDOWN,
+	RSHIFTDOWN,
+	DPSTARDOWN,
+	LALTDOWN,
+	SPACEDOWN,
+	CAPSDOWN,
 };
 
 

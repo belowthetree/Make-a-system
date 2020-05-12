@@ -88,19 +88,23 @@ Start_Code32:
     call Search_File
 
     ; 页目录
-    mov dword [0x90000], 0x91007
-    mov dword [0x90800], 0x91007
+    mov dword [0x10000], 0x11007
+    mov dword [0x10800], 0x11007
     ; 二级页表
-    mov dword [0x91000], 0x92007
+    mov dword [0x11000], 0x12007
     ; 三级，2M 页表
-    mov dword [0x92000], 0x000083
-    mov dword [0x92008], 0x200083
-    mov dword [0x92010], 0x400083
-    mov dword [0x92018], 0x600083
-    mov dword [0x92020], 0x800083
-    mov dword [0x92028], 0xe0000083
-    mov dword [0x92030], 0xe0200083
-    mov dword [0x92038], 0xe0400083
+    mov dword [0x12000], 0x000083
+    mov dword [0x12008], 0x200083
+    mov dword [0x12010], 0x400083
+    mov dword [0x12018], 0x600083
+    mov dword [0x12020], 0x800083
+    mov dword [0x12028], 0xe0000083 ; a00000
+    mov dword [0x12030], 0xe0200083
+    mov dword [0x12038], 0xe0400083
+    ; mov dword [0x92038], 0xfec00083
+    ; mov dword [0x92040], 0xfee00083
+    ; mov dword [0x92048], 0xff000083
+    ; mov dword [0x92050], 0xffe00083 ; 1400000
 
     ; 加载 64 位 GDT
     db 0x66
@@ -119,7 +123,7 @@ Start_Code32:
     mov cr4, eax
 
     ; 加载页目录
-    mov eax, 0x90000
+    mov eax, 0x10000
     mov cr3, eax
 
     ; 开启长模式，ECX 选择寄存器组号，读取后放置在 EAX

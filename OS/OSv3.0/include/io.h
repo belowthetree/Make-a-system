@@ -23,7 +23,14 @@ void putul_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int align,
 void putux(unsigned long n, int isuper, int align, int zero);
 void putux_color(unsigned long n, uint32 BackColor, uint32 ForeColor, int isuper, int align, int zero);
 
+char getchar();
+void getstr(char* str, int n);
+
 void memset(void *str, unsigned char c, long size);
 
+unsigned char input_buffer[256];
+unsigned char head, tail;
+char curcmd[256];
+char cmd;
 
 #endif

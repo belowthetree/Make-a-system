@@ -20,6 +20,8 @@ void InitDescripter(){
 	memset((void *)IDT_Table, 0, sizeof(struct IDT) * 256);
 	set_gdt(1, 0, 0, 0x2098);	// 内核代码段
 	set_gdt(2, 0, 0, 0x0092);	// 内核数据段
+	set_gdt(3, 0, 0, 0x2098);	// 内核代码段
+	set_gdt(4, 0, 0, 0x0092);	// 内核数据段
 	set_gdt(5, 0, 0, 0x20f8);	// 用户代码段
 	set_gdt(6, 0, 0, 0x00f2);	// 用户代码段
 

@@ -3,7 +3,7 @@
 #include "lib.h"
 #include "descriptor.h"
 
-#define NRNUM 20
+#define NRNUM 30
 
 void (* interrupt[24])();
 void (* do_int[NRNUM])();
@@ -41,6 +41,7 @@ void InitInterrupt()
 	for(i = 32;i < 56;i++)
 		set_intr_gate(i , 2 , interrupt[i - 32]);
 
+	set_intr_gate(32, 2, interrupt[0]);
 	// do_int[0] = Timer;
 //	printf_color(BLACK, RED, "8259A init \n");
 
@@ -57,7 +58,7 @@ void InitInterrupt()
 	io_out8(0xa1,0x01);
 
 	//只开启键盘中断|全部开启
-	io_out8(0x21,0x01);
+	io_out8(0x21,0x00);
 	io_out8(0xa1,0x00);
 	// 此处会令系统重启，慎用
 	// io_out8(0x64, 0xfe);
@@ -71,27 +72,30 @@ void register_irq(int num_irq, void * handler){
 	do_int[num_irq - 0x20] = handler;
 }
 
-void Timer()
-{
-	static int clock = 0;
-	printf("Timer clock: %d\t", clock++);
-}
+// void Timer()
+// {
+// 	static int clock = 0;
+// 	printf("Timer clock: %d\t", clock++);
+// }
 
 void do_IRQ(unsigned long regs, unsigned long nr)
 {
 	nr -= 0x20UL;
 	if (nr < NRNUM && do_int[nr]) {
 		// printf_color(BLACK, GREEN, "enter %ux nr: %d\n", do_int[nr], nr);
-		do_int[nr]();
+		if (nr != 0)
+			do_int[nr]();
+		else
+			do_int[nr](regs);
 		// printf_color(BLACK, GREEN, "keyboard\n");
 	}
-	else
-	{
-		unsigned char x;
-		printf_color(BLACK, RED, "do_IRQ:%08X\n", nr);
-		x = io_in8(0x60);
-		printf_color(BLACK, RED, "key code:%018X\n",x);
-	}
+	// else
+	// {
+	// 	unsigned char x;
+	// 	printf_color(BLACK, RED, "do_IRQ:%08X\n", nr);
+	// 	x = io_in8(0x60);
+	// 	printf_color(BLACK, RED, "key code:%018X\n",x);
+	// }
 	io_out8(PIC1_OCW2, 0x64);	/* 通知PIC IRQ-12 已经受理完毕 */
 	io_out8(PIC0_OCW2, 0x62);	/* 通知PIC IRQ-02 已经受理完毕 */
 	io_out8(0x20,0x20);

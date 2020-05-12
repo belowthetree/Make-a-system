@@ -21,8 +21,11 @@ struct SCREEN{
 void InitGraph(unsigned int* addr);
 void TranslateX(int x);
 unsigned long GetPixel(int x, int y);
-void SetPixel(int x, int y, unsigned long color);
+void SetPixel(int x, int y, unsigned int color);
 
+void cls();
+void backspace(int n);
+void set_background();
 
 
 

@@ -18,7 +18,7 @@ ata1-slave: type=none
 ata2: enabled=0
 ata3: enabled=0
 pci: enabled=1, chipset=i440fx
-vga: extension=vbe, update_freq=5
+vga: extension=vbe, update_freq=20
 
 cpu: count=1:1:1, ips=4000000, quantum=16, model=corei7_haswell_4770, reset_on_triple_fault=1, cpuid_limit_winnt=0, ignore_bad_msrs=1, mwait_is_nop=0, msrs="msrs.def"
 
@@ -49,5 +49,5 @@ com2: enabled=0
 com3: enabled=0
 com4: enabled=0
 
-megs: 64
+megs: 128
 

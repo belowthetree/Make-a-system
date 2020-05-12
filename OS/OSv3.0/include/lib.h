@@ -11,8 +11,27 @@ void io_out32(unsigned short port,unsigned int value);
 unsigned char io_in8(unsigned short port);
 unsigned int io_in32(unsigned short port);
 
+unsigned long * Get_CR3();
+
+#define flush_tlb()						\
+do								\
+{								\
+	unsigned long	tmpreg;					\
+	__asm__ __volatile__ 	(				\
+				"movq	%%cr3,	%0	\n\t"	\
+				"movq	%0,	%%cr3	\n\t"	\
+				:"=r"(tmpreg)			\
+				:				\
+				:"memory"			\
+				);				\
+}while(0)
+
+void wrmsr(unsigned long address,unsigned long value);
+
 #define port_insw(port,buffer,nr)	\
 __asm__ __volatile__("cld;rep;insw;mfence;"::"d"(port),"D"(buffer),"c"(nr):"memory")
+
+#define io_mfence() __asm__ ("mfence")
 
 #define nop() 		__asm__ __volatile__ ("nop	\n\t")
 

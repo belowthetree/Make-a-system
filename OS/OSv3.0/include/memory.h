@@ -10,6 +10,7 @@
 
 #define AREABASE 0xffff800000000000
 #define MAPBASE  0xffff800000000200
+#define TABLE3BASE 0x12000
 #define AREASIZE 10
 
 int AREANUM;
@@ -63,11 +64,17 @@ struct MEMORY_MGR{
 }memory_manager;
 
 
-
 void InitMemory();
 unsigned long kmalloc(int size);
 void kfree(unsigned long addr);
 
+
+struct PTABLE1{
+	struct PTABLE2* next;
+}__attribute__((packed));
+struct PTABLE2{
+	unsigned long* physical_addr;
+}__attribute__((packed));
 
 
 

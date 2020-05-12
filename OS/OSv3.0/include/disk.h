@@ -29,7 +29,7 @@
 #define DISK_STATUS_REQ		(1 << 3)
 #define DISK_STATUS_ERROR	(1 << 0)
 
-void disk_init();
+void InitDisk();
 void disk_handler();
 void read_one_sector(int n, unsigned char* cx);
 

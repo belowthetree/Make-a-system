@@ -270,6 +270,7 @@ void pagetable_init()
 		printf("st %d\n", z->pages_length);
 		for (j = 0;j < z->pages_length;j++, p++)
 		{
+			// 获取一级页表地址加上 p 的物理地址偏移
 			tmp = (unsigned long *)(((unsigned long)Phy_To_Virt((unsigned long)Global_CR3
 				& (~ 0xfffUL))) + (((unsigned long)Phy_To_Virt(p->PHY_address) 
 				>> PAGE_GDT_SHIFT) & 0x1ff) * 8);

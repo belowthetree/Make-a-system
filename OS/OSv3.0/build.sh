@@ -10,8 +10,9 @@ make
 
 sudo mount ./img/boot.img /mnt/ -o loop -t vfat
 sudo cp loader.bin /mnt/
-# sudo cp ./img/loader.img /mnt/
+# sudo cp boot.bin /mnt/
 sudo cp kernel.bin /mnt/
+sudo cp ./img/bg.bmp /mnt/
 sync
 sudo umount /mnt/
 

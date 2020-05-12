@@ -25,6 +25,56 @@ RFLAGS	=	0xa8
 OLDRSP	=	0xb0
 OLDSS	=	0xb8
 
+ENTRY(switch_to)
+	movq $17, %rcx
+	movq %rdi, %rax
+	movq %rsi, %rbx
+.lp1:
+	movq (%rax), %rdi
+	movq %rdi, (%rbx)
+	dec %rcx
+	addq $8, %rax
+	addq $8, %rbx
+	cmp %rcx, 0
+	jnz .lp1
+
+	movq $5, %rcx
+	addq $16, %rax
+.lp2:
+	movq (%rax), %rdi
+	movq %rdi, (%rbx)
+	dec %rcx
+	addq $8, %rax
+	addq $8, %rbx
+	cmp %rcx, 0
+	jnz .lp2
+
+	movq $5, %rcx
+	addq $0xa8, %rdx
+	addq $-8, %rax
+.2lp:
+	movq (%rdx), %rdi
+	movq %rdi, (%rax)
+	dec %rcx
+	addq $-8, %rdx
+	addq $-8, %rax
+	cmp %rcx, 0
+	jnz .2lp
+
+	addq $-16, %rax
+
+	movq $17, %rcx
+.1lp:
+	movq (%rdx), %rdi
+	movq %rdi, (%rax)
+	dec %rcx
+	addq $-8, %rdx
+	addq $-8, %rax
+	cmp %rcx, 0
+	jnz .1lp
+
+	ret
+
 RESTORE_ALL:
 	popq	%r15;
 	popq	%r14;
@@ -260,37 +310,37 @@ ENTRY(virtualization_exception)
 	xchgq	%rax,	(%rsp)
 	jmp	error_code
 
-# ENTRY(system_call)
-# 	sti
-# 	subq	$0x38,	%rsp			 
-# 	cld;					 
+ENTRY(system_call)
+	# sti
+	subq	$0x38,	%rsp			 
+	cld;					 
 
-# 	pushq	%rax;				 	
-# 	movq	%es,	%rax;			 	
-# 	pushq	%rax;				 	
-# 	movq	%ds,	%rax;			 	
-# 	pushq	%rax;				 	
-# 	xorq	%rax,	%rax;			 	
-# 	pushq	%rbp;				 	
-# 	pushq	%rdi;				 	
-# 	pushq	%rsi;				 	
-# 	pushq	%rdx;				 	
-# 	pushq	%rcx;				 
-# 	pushq	%rbx;				 	
-# 	pushq	%r8;				 	
-# 	pushq	%r9;				 	
-# 	pushq	%r10;				 
-# 	pushq	%r11;				 
-# 	pushq	%r12;				 	
-# 	pushq	%r13;				 
-# 	pushq	%r14;				 	
-# 	pushq	%r15;				 	
-# 	movq	$0x10,	%rdx;			 	
-# 	movq	%rdx,	%ds;			 	
-# 	movq	%rdx,	%es;			 
-# 	movq	%rsp,	%rdi			 	
-			
-# 	callq	system_call_function
+	pushq	%rax;				 	
+	movq	%es,	%rax;			 	
+	pushq	%rax;				 	
+	movq	%ds,	%rax;			 	
+	pushq	%rax;				 	
+	xorq	%rax,	%rax;			 	
+	pushq	%rbp;				 	
+	pushq	%rdi;				 	
+	pushq	%rsi;				 	
+	pushq	%rdx;				 	
+	pushq	%rcx;				 
+	pushq	%rbx;				 	
+	pushq	%r8;				 	
+	pushq	%r9;				 	
+	pushq	%r10;				 
+	pushq	%r11;				 
+	pushq	%r12;				 	
+	pushq	%r13;				 
+	pushq	%r14;				 	
+	pushq	%r15;				 	
+	movq	$0x10,	%rdx;			 	
+	movq	%rdx,	%ds;			 	
+	movq	%rdx,	%es;			 
+	movq	%rsp,	%rdi
+
+	callq	do_system_call
 
 ENTRY(ret_system_call)			
 	movq	%rax,	0x80(%rsp)		 
@@ -318,7 +368,6 @@ ENTRY(ret_system_call)
 	sysexit
 
 int_code:
-	cli
 	pushq	%rax
 	movq	%es,	%rax
 	pushq	%rax

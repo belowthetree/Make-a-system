@@ -22,6 +22,6 @@ go_to_kernel:
 	.quad	main
 
 ENTRY(_stack_start)
-	.fill	2048, 1, 0
+	.fill	4096, 1, 0
 EndOfStack:
-	.quad   _stack_start + 2048
+	.quad   _stack_start + 4096

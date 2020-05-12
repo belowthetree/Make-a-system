@@ -1,5 +1,6 @@
 #include "memory.h"
 #include "io.h"
+#include "lib.h"
 
 extern char _text;
 extern char _etext;
@@ -19,11 +20,14 @@ struct SLAB* create_slab(int size);
 void append_slab(struct SLAB* slab, int size);
 void delete_slab(struct SLAB* slab, int size);
 
+void init_page_table();
+
 void InitMemory(){
 	search_memory();
 	init_page();
 	init_slab();
 
+	init_page_table();
 	// int i;
 	// for (i = 0;i < 16;i++){
 	// 	struct PAGE* page = alloc_page(PAGE_KERNEL_PAGE);
@@ -32,10 +36,10 @@ void InitMemory(){
 	// }
 
 	// while(1);
-	// int size = 15;
+	// int size = 512 * 9;
 	// for (i = 0;i < 16;i++){
 	// 	unsigned long addr = kmalloc(size);
-	// 	size += 30;
+	// 	// size += 30;
 	// 	printf("addr : %ux\n", addr);
 	// 	kfree(addr);
 	// }
@@ -75,6 +79,9 @@ void init_page(){
 		}
 		pre = memory_manager.area[i]->end & PAGE_2M_MASK;
 	}
+	use_page(5, PAGE_KERNEL_PAGE);
+	use_page(6, PAGE_KERNEL_PAGE);
+	use_page(7, PAGE_KERNEL_PAGE);
 	printf_color(BLACK, GREEN, "page end at %ux\n", &memory_manager.pages[memory_manager.free_page]);
 }
 
@@ -197,7 +204,7 @@ unsigned long kmalloc(int size){
 	int i, level = 32;
 	for (i = 0;i < 16;i++){
 		if (level >= size){
-			printf_color(BLACK, GREEN, "find level:%d, idx: %d\n", level, i);
+			// printf_color(BLACK, GREEN, "addr at %ux\n", tmp);
 			return alloc_slab(i, level);
 		}
 		level *= 2;
@@ -228,7 +235,8 @@ unsigned long alloc_slab(int i, int size){
 			slab->free_count--;
 			slab->used_count++;
 			slab->bitmap[i / 8] |= (unsigned char)(1 << (i % 8));
-			return (unsigned long)slab->page->virtual_addr + i * size;
+			// printf_color(BLACK, RED, "addr at %ux\n", (unsigned long)slab->page->virtual_addr + i * size);
+			return (unsigned long)slab->page->physical_addr + i * size;
 		}
 	}
 
@@ -381,3 +389,36 @@ void kfree(unsigned long addr){
 	printf_color(BLACK, RED, "free error\n");
 }
 
+void init_page_table(){
+	// return;
+	struct PTABLE1 * page_table1 = Phy_To_Virt(Get_CR3());
+	struct PTABLE2 * page_table2;
+	page_table1 += 16 * 16;
+	// printf_color(BLACK, GREEN, "page1 at %ux\n", page_table1);
+	// printf_color(BLACK, GREEN, "page2 at %ux point to %ux\n", 
+		// page_table1->next, ((struct PTABLE2 *)Phy_To_Virt((unsigned long)page_table1->next & (~0xffUL)))->physical_addr);
+
+	if (page_table1->next != 0)
+		page_table2 = (struct PTABLE2*)Phy_To_Virt(page_table1->next);
+
+	// printf_color(BLACK, GREEN, "page2 at %ux point to %ux\n", page_table1->next, page_table2->physical_addr);
+
+	unsigned long* addr = Phy_To_Virt(TABLE3BASE);
+	struct PAGE* page = memory_manager.pages;
+	int i;
+	printf_color(BLACK, GREEN, "start\n");
+
+	for (i = 0; i < memory_manager.total_page;i++){
+		if (addr[i] != 0)
+			continue;
+		addr[i] = (page[i].physical_addr & (~0xfffUL)) | PAGE_KERNEL_PAGE;
+		// printf_color(BLACK, YELLOW, "page3 at %ux, point to %ux\t", &addr[i], addr[i]);
+	}
+
+	// addr[5] = 0xe0000083;
+	// addr[6] = 0xe0200083;
+	// addr[7] = 0xe0400083;
+
+	flush_tlb();
+	printf_color(BLACK, GREEN, "\nfinish table\n");
+}

@@ -4,6 +4,8 @@
 
 #define offsetof(TYPE, MEMBER) ((unsigned long) &((TYPE*)0)->MEMBER)
 
+#define io_mfence() __asm__ ("mfence")
+
 #define container_of(ptr, type, member) ({          \
         const typeof( ((type *)0)->member ) *__mptr = (const typeof( ((type *)0)->member ) *)(ptr); \
         (type *)( (char *)__mptr - offsetof(type,member) );})

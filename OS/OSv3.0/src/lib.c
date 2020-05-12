@@ -39,3 +39,20 @@ unsigned int io_in32(unsigned short port)
 				:"memory");
 	return ret;
 }
+
+unsigned long * Get_CR3()
+{
+	unsigned long * tmp;
+	__asm__ __volatile__ (
+					"movq	%%cr3,	%0	\n\t"
+					:"=r"(tmp)
+					:
+					:"memory"
+				);
+	return tmp;
+}
+
+void wrmsr(unsigned long address,unsigned long value)
+{
+	__asm__ __volatile__("wrmsr	\n\t"::"d"(value >> 32),"a"(value & 0xffffffff),"c"(address):"memory");	
+}

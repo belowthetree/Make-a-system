@@ -1,7 +1,7 @@
 Next at t=0
 (0) [0x0000fffffff0] f000:fff0 (unk. ctxt): jmpf 0xf000:e05b          ; ea5be000f0
 c
-Next at t=86521416
-(0) [0x000000107d1c] 0008:ffff800000107d1c (unk. ctxt): nop                       ; 90
+Next at t=157058544
+(0) [0x0000001053d4] 0008:ffff8000001053d4 (unk. ctxt): jmp .-2 (0xffff8000001053d4) ; ebfe
 q
-(0).[86521416] [0x000000107d1c] 0008:ffff800000107d1c (unk. ctxt): nop                       ; 90
+(0).[157058544] [0x0000001053d4] 0008:ffff8000001053d4 (unk. ctxt): jmp .-2 (0xffff8000001053d4) ; ebfe

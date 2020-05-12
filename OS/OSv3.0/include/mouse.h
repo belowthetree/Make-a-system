@@ -5,9 +5,10 @@
 #define MOUSE_ENABLE		0xf4		// 允许鼠标发送数据
 #define KBCMD_EN_MOUSE_INTFACE	0xa8 	// 开启鼠标端口
 
-#define EDGECOLOR 0x888888
+#define EDGECOLOR 0xaaaaaa
+#define CONTENT	  0xff0000
 
-void mouse_init();
+void InitMouse();
 void mouse_handler();
 char get_mouse_code();
 void decode_mouse();

@@ -56,7 +56,7 @@ void init_interrupt()
 }
 
 void register_irq(int num_irq, void * handler){
-	interrupt[num_irq] = handler;
+	interrupt[num_irq - 32] = handler;
 }
 
 void Timer()

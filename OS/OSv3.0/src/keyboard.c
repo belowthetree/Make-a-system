@@ -6,10 +6,14 @@
 
 int shift_l, shift_r, ctrl_l, ctrl_r, alt_l, alt_r;
 struct keyboard_inputbuffer * kbcode = 0;
+int cmdlen, caps;
 
-void keyboard_init(){
+#define WORDOFFSET 32
+
+void InitKeyboard(){
     printf("init keyboard\n");
 
+    cmdlen = caps = 0;
     kbcode = (struct keyboard_inputbuffer*)kmalloc((unsigned long)sizeof(struct keyboard_inputbuffer));
     kbcode->head = kbcode->buf;
     kbcode->tail = kbcode->buf;
@@ -25,7 +29,7 @@ void keyboard_init(){
     wait_KB_write();
     io_out8(PORT_KB_DATA, KB_INIT_MODE);
 
-    printf_color(BLACK, GREEN, "kb addr %ux\n", (unsigned long)kbcode);
+    // printf_color(BLACK, GREEN, "kb addr %ux\n", (unsigned long)kbcode);
 
     unsigned long i, j;
     for (i = 0;i < 1000;i++)
@@ -159,8 +163,31 @@ void decode_keyboard(){
         case ZDOWN:
             c = 'z';
             break;
+        case ENTERDOWN:
+            c = '\n';
+            break;
+        case SPACEDOWN:
+            c = ' ';
+            break;
+        case BACKSPACDOWNE:
+            backspace(1);
+            return;
+        case CAPSDOWN:
+            caps = !caps;
+            return;
         default:
             return;
     }
+    if (caps && c >= 'a' && c <= 'z')
+        c -= WORDOFFSET;
     putchar(c);
+    input_buffer[head++] = c;
+    cmdlen++;
+    if (c == '\n'){
+        int i = 0;
+        while (tail != head)
+            curcmd[i++] = input_buffer[tail++];
+        curcmd[i - 1] = '\0';
+        cmd = 1;
+    }
 }
