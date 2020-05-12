@@ -171,6 +171,7 @@ void decode_keyboard(){
             break;
         case BACKSPACDOWNE:
             backspace(1);
+            input_head--;
             return;
         case CAPSDOWN:
             caps = !caps;
@@ -181,12 +182,12 @@ void decode_keyboard(){
     if (caps && c >= 'a' && c <= 'z')
         c -= WORDOFFSET;
     putchar(c);
-    input_buffer[head++] = c;
+    input_buffer[input_head++] = c;
     cmdlen++;
     if (c == '\n'){
         int i = 0;
-        while (tail != head)
-            curcmd[i++] = input_buffer[tail++];
+        while (input_tail != input_head)
+            curcmd[i++] = input_buffer[input_tail++];
         curcmd[i - 1] = '\0';
         cmd = 1;
     }

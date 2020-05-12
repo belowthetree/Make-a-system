@@ -4,13 +4,14 @@
 #include <stdarg.h>
 
 char getchar(){
-    return input_buffer[tail++];
+    return input_buffer[input_tail++];
 }
 
 void getstr(char* str, int n){
     int i = 0;
-    while (i < n && input_buffer[tail] != '\0' && input_buffer[tail] != '\n' && input_buffer[tail] != 0){
-        str[i] = input_buffer[tail++];
+    while (i < n && input_buffer[input_tail] != '\0' 
+        && input_buffer[input_tail] != '\n' && input_buffer[input_tail] != 0){
+        str[i] = input_buffer[input_tail++];
     }
 }
 

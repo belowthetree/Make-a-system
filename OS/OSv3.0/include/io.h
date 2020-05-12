@@ -29,7 +29,7 @@ void getstr(char* str, int n);
 void memset(void *str, unsigned char c, long size);
 
 unsigned char input_buffer[256];
-unsigned char head, tail;
+unsigned char input_head, input_tail;
 char curcmd[256];
 char cmd;
 

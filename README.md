@@ -19,3 +19,11 @@ sudo apt-get install bochs
 sudo apt-get install bochs-x
 ```
 
+## 一些辣鸡功能
+
+1. ls，列出当前软盘的文件
+2. help help me，显示帮助信息
+3. cls，清空屏幕
+4. set bg 文件名（可忽略空格），设置背景，如下
+
+![](./截图录屏_选择区域_20200512131904.jpg)
