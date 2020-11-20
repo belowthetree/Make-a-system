@@ -21,6 +21,14 @@ sudo apt-get install bochs
 sudo apt-get install bochs-x
 ```
 
+# 使用
+
+```
+cd OS/OSv3.0/
+make
+bochs -f ./img/bochsrc
+```
+
 ## 一些辣鸡功能
 
 1. ls，列出当前软盘的文件
